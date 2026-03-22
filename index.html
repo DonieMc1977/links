@@ -2023,6 +2023,21 @@ function kbSelect(){
   else if(kbPanel===2&&id){selSec=id;render();setTimeout(()=>kbSetPanel(3),30);}
   else if(kbPanel===3&&id)handleOpen(id);
 }
+function kbRight(){
+  // If no item focused yet, focus first item in current panel first
+  const items=kbGetItems();
+  if(!items.length){
+    // No items in current panel — try moving to next panel
+    kbPanel=Math.min(3,kbPanel+1);kbSetPanel(kbPanel);return;
+  }
+  if(kbIndex<0){kbIndex=0;kbApply();}
+  // Now select to navigate into next panel
+  const el=items[kbIndex];const id=el.dataset.id;
+  if(kbPanel===0&&id){selSub=id;selSS=null;selSec=null;render();setTimeout(()=>kbSetPanel(1),30);}
+  else if(kbPanel===1&&id){selSS=id;selSec=null;render();setTimeout(()=>kbSetPanel(2),30);}
+  else if(kbPanel===2&&id){selSec=id;render();setTimeout(()=>kbSetPanel(3),30);}
+  else if(kbPanel===3){kbPanel=3;kbApply();}
+}
 function initKeyboard(){
   document.addEventListener('keydown',e=>{
     const inInp=document.activeElement&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
@@ -2033,7 +2048,7 @@ function initKeyboard(){
     if(!inInp){
       if(e.key==='ArrowDown'){e.preventDefault();kbMove(1);}
       else if(e.key==='ArrowUp'){e.preventDefault();kbMove(-1);}
-      else if(e.key==='ArrowRight'){e.preventDefault();kbSelect();}
+      else if(e.key==='ArrowRight'){e.preventDefault();kbRight();}
       else if(e.key==='ArrowLeft'){
         e.preventDefault();
         if(kbPanel===3&&selSec){selSec=null;render();kbSetPanel(2);}
