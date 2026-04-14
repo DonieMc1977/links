@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><title>Link Organiser — Auth</title>
+<style>
+  body{font-family:sans-serif;background:#1a1a2e;color:#c8ccd4;
+    display:flex;align-items:center;justify-content:center;
+    height:100vh;margin:0;text-align:center;}
+  .msg{font-size:15px;}
+</style>
+</head>
+<body>
+<div class="msg" id="msg">Completing sign in…</div>
+<script>
+  // Extract token from URL hash or query string
+  function getParam(name) {
+    const hash = new URLSearchParams(location.hash.slice(1));
+    const query = new URLSearchParams(location.search);
+    return hash.get(name) || query.get(name);
+  }
+  const token = getParam('access_token');
+  const error = getParam('error');
+  if (token) {
+    document.getElementById('msg').textContent = '✅ Signed in! You can close this tab.';
+    // Send token back to the extension via chrome.runtime
+    // The extension listens for this via a content script approach
+    // We store in localStorage keyed by a nonce, extension reads it
+    const nonce = getParam('state');
+    if (nonce) {
+      localStorage.setItem('lo_ext_token_' + nonce, token);
+      localStorage.setItem('lo_ext_token_ts_' + nonce, Date.now());
+    }
+    setTimeout(() => window.close(), 1500);
+  } else if (error) {
+    document.getElementById('msg').textContent = '⚠ Auth error: ' + error;
+  } else {
+    document.getElementById('msg').textContent = '⚠ No token received.';
+  }
+</script>
+</body>
+</html>
