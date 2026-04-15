@@ -1087,6 +1087,39 @@ function showApp(){
   initResizers();
   initKeyboard();
   initSearch();
+  // Auto-refresh when tab becomes visible (e.g. switching back from extension)
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'&&gToken){
+      silentRefresh();
+    }
+  });
+  // BroadcastChannel — extension posts a message after saving
+  try{
+    const bc=new BroadcastChannel('lo_refresh');
+    bc.onmessage=()=>silentRefresh();
+  }catch{}
+}
+let _refreshing=false;
+async function silentRefresh(){
+  if(_refreshing)return;
+  _refreshing=true;
+  try{
+    const newD=await loadDataRaw();
+    if(newD&&JSON.stringify(newD)!==JSON.stringify(D)){
+      D=newD;
+      render();
+      setSyncStatus('ok','Updated');
+    }
+  }catch{}
+  _refreshing=false;
+}
+async function loadDataRaw(){
+  const fid=await findDataFile();
+  if(!fid)return null;
+  const r=await driveReq(`https://www.googleapis.com/drive/v3/files/${fid}?alt=media`);
+  const text=await r.text();
+  if(text&&text.trim().startsWith('{'))return JSON.parse(text);
+  return null;
 }
 
 // ════════════════════════════════════════════════════════
