@@ -941,6 +941,14 @@ function initGoogleAuth(){
         return;
       }
       gToken=resp.access_token;
+      // Send token to extension if it's waiting for it
+      try{ window.postMessage({type:'LO_TOKEN',token:gToken},'*'); }catch{}
+      // Listen for extension requesting token
+      window.addEventListener('message',(e)=>{
+        if(e.data&&e.data.type==='LO_GET_TOKEN'&&gToken){
+          window.postMessage({type:'LO_TOKEN',token:gToken},'*');
+        }
+      });
       // Fetch user info
       fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+gToken}})
         .then(r=>r.json()).then(info=>{
@@ -1087,6 +1095,16 @@ function showApp(){
   initResizers();
   initKeyboard();
   initSearch();
+  // Allow extension to request auth token via postMessage
+  window.addEventListener('message', e => {
+    if(e.data && e.data.type === 'LO_REQUEST_TOKEN') {
+      if(gToken) {
+        e.source.postMessage({ type: 'LO_TOKEN', token: gToken }, e.origin || '*');
+      } else {
+        e.source.postMessage({ type: 'LO_TOKEN', token: null }, e.origin || '*');
+      }
+    }
+  });
   // Auto-refresh when tab becomes visible (e.g. switching back from extension)
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'&&gToken){
