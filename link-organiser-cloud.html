@@ -941,7 +941,9 @@ function initGoogleAuth(){
         return;
       }
       gToken=resp.access_token;
-      // Send token to extension if it's waiting for it
+      // Write token to localStorage so extension can read it directly
+      try{ localStorage.setItem('lo_ext_token', gToken); localStorage.setItem('lo_ext_token_ts', Date.now()); }catch{}
+      // Also postMessage for content script
       try{ window.postMessage({type:'LO_TOKEN',token:gToken},'*'); }catch{}
       // Listen for extension requesting token
       window.addEventListener('message',(e)=>{
