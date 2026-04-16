@@ -1095,8 +1095,10 @@ function migrateData(d){
 }
 function showApp(){
   document.getElementById('mainApp').style.display='flex';
-  // Expose save function for extension
+  // Expose data and save function for extension
   window.loSave=saveData;
+  window.loData=D;
+  window.loReady=true;
   render();
   loadPrefs();
   initResizers();
