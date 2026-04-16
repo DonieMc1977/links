@@ -347,6 +347,35 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
 /* ── SETTINGS ── */
 .settings-section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;}
 .settings-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);margin-bottom:8px;}
+
+/* ── COMPACT DENSITY ── */
+body.compact .panel-item{padding:3px 6px;}
+body.compact .item-title{font-size:12px;}
+body.compact .item-count{font-size:9px;}
+body.compact .bm-main{padding:6px 9px;gap:7px;}
+body.compact .bm-title{font-size:12px;}
+body.compact .bm-url{font-size:10px;margin-bottom:1px;}
+body.compact .bm-tags{gap:3px;margin-top:2px;}
+body.compact .tag-pill{font-size:10px;padding:0 5px;}
+body.compact .bm-cl-toggle{padding:3px 9px 3px 36px;}
+body.compact .cl-body{padding:3px 9px 4px 36px;}
+body.compact .cl-item{padding:2px 0;}
+body.compact .cl-text{font-size:11px;}
+body.compact .links-header{padding:5px 12px;}
+body.compact .filter-bar{padding:3px 8px;}
+body.compact .panel-header{padding:4px 6px;min-height:28px;}
+body.compact .panel-label{font-size:9px;}
+.density-toggle{display:flex;gap:1px;align-items:center;}
+.density-btn{padding:3px 6px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);font-size:10px;cursor:pointer;transition:all .12s;font-family:var(--font);}
+.density-btn:first-child{border-radius:3px 0 0 3px;}.density-btn:last-child{border-radius:0 3px 3px 0;border-left:none;}
+.density-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── HOVER TOOLTIP ── */
+.bm-tooltip{position:fixed;z-index:1500;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:300px;pointer-events:none;font-size:12px;}
+.bm-tooltip .tt-title{font-weight:600;color:var(--bright);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bm-tooltip .tt-row{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:11px;margin-bottom:2px;}
+.bm-tooltip .tt-row b{color:var(--text);font-weight:500;}
+.bm-tooltip .tt-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -398,10 +427,20 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
   </div>
   <div class="hactions">
     <div class="sync-pill" id="syncPill"><div class="sync-dot"></div><span id="syncTxt">Saved</span></div>
+    <div class="density-toggle" title="Undo / Redo">
+      <button class="density-btn" id="undoBtn" onclick="undo()" disabled title="Undo (Ctrl+Z)" style="font-size:14px;padding:2px 6px;">↶</button>
+      <button class="density-btn" id="redoBtn" onclick="redo()" disabled title="Redo (Ctrl+Y)" style="font-size:14px;padding:2px 6px;">↷</button>
+    </div>
     <button class="btn btn-ghost" onclick="toggleRecent()" title="Recent">🕐</button>
     <button class="btn btn-ghost" onclick="openTagBrowser()" title="Tag Browser">🏷</button>
+    <button class="btn btn-ghost" onclick="openActionsOverlay()" title="Actions & Tasks" id="actionsBtn" style="position:relative;">⚡<span id="actionsBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:10px;padding:0 4px;font-size:9px;font-weight:700;min-width:14px;text-align:center;line-height:14px;"></span></button>
     <button class="btn btn-ghost" onclick="openLinksReport()" title="Links Report">📊</button>
     <button class="btn btn-primary" onclick="openBmModal(null)" style="padding:5px 12px;">＋ Add</button>
+    <button class="btn btn-ghost" onclick="openBulkImport()" title="Bulk Import URLs">📥</button>
+    <div class="density-toggle" title="Display density">
+      <button class="density-btn active" id="denComfy" onclick="setDensity('comfy')">▬</button>
+      <button class="density-btn" id="denCompact" onclick="setDensity('compact')">≡</button>
+    </div>
     <button class="btn btn-ghost" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
     <button class="btn btn-ghost" onclick="openModal('settingsModal')" title="Settings">⚙</button>
   </div>
@@ -478,6 +517,7 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
         <option value="az">A→Z</option>
         <option value="za">Z→A</option>
         <option value="date">📅 Date</option>
+        <option value="priority">🎯 Priority</option>
       </select>
     </div>
     <div class="tag-filter-bar" id="tagFilterBar"><span class="tf-label">Tags:</span></div>
@@ -497,10 +537,19 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
 <!-- CONTEXT MENU -->
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-item" id="ctx-open">🔗 Open</div>
+  <div id="ctx-urls-sub" style="display:none;"></div>
   <div class="ctx-item" id="ctx-copy">📋 Copy URL</div>
   <div class="ctx-div"></div>
   <div class="ctx-item" id="ctx-edit">✏️ Edit</div>
   <div class="ctx-item" id="ctx-move">➡️ Move to…</div>
+  <div class="ctx-div" id="ctx-pri-div"></div>
+  <div class="ctx-item" id="ctx-pri-toggle">🎯 Priority ▸</div>
+  <div id="ctx-pri-sub" style="display:none;padding-left:14px;">
+    <div class="ctx-item" data-pri="">○ None</div>
+    <div class="ctx-item" data-pri="high">🔴 High</div>
+    <div class="ctx-item" data-pri="med">🟡 Medium</div>
+    <div class="ctx-item" data-pri="low">🔵 Low</div>
+  </div>
   <div class="ctx-div"></div>
   <div class="ctx-item" id="ctx-archive">📦 Archive</div>
   <div class="ctx-item" id="ctx-restore" style="display:none;">🔄 Restore</div>
@@ -509,6 +558,7 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
+<div class="bm-tooltip" id="bmTooltip" style="display:none;"></div>
 
 <!-- ══ MODALS ══ -->
 
@@ -678,6 +728,7 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn" onclick="exportJSON()" style="font-size:12px;">⬇️ Export JSON</button>
           <button class="btn" onclick="document.getElementById('importFile').click()" style="font-size:12px;">⬆️ Import JSON</button>
+          <button class="btn" onclick="exportBookmarksHTML()" style="font-size:12px;">📑 Export Bookmarks (HTML)</button>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(this)">
       </div>
@@ -691,6 +742,60 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
       <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
     </div>
   </div>
+</div>
+
+<!-- BULK IMPORT -->
+<div class="modal-overlay" id="bulkImportModal" style="display:none;">
+  <div class="modal modal-lg">
+    <div class="modal-title">📥 Bulk Import URLs</div>
+    <div class="modal-scroll">
+      <div class="fg">
+        <label class="fl">Paste URLs (one per line)</label>
+        <textarea class="fta" id="bulkUrls" rows="8" placeholder="https://example.com&#10;https://another.com&#10;…" style="resize:vertical;min-height:100px;max-height:260px;font-family:var(--mono);font-size:12px;line-height:1.6;"></textarea>
+        <div id="bulkPreview" style="font-size:11px;color:var(--dim);margin-top:4px;"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Import to</label>
+        <div style="display:flex;gap:7px;">
+          <select class="fs" id="bulkSub" onchange="fillBulkSS()" style="flex:1;"></select>
+          <select class="fs" id="bulkSubSub" onchange="fillBulkSec()" style="flex:1;"></select>
+          <select class="fs" id="bulkSec" style="flex:1;"></select>
+        </div>
+      </div>
+    </div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="closeModal('bulkImportModal')">Cancel</button>
+      <button class="btn btn-primary" id="bulkImportBtn">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIONS OVERLAY -->
+<div class="overlay" id="actionsOverlay">
+  <div class="ov-hdr">
+    <button class="ov-close" onclick="closeActionsOverlay()">✕</button>
+    <span class="ov-title">⚡ Actions & Tasks</span>
+    <span id="aoStats" style="font-size:11px;color:var(--dim);margin-left:8px;"></span>
+    <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-left:auto;" onclick="resetAO()">⟳ Reset</button>
+  </div>
+  <div class="ov-controls">
+    <button class="ov-tab active" data-ao-status="open" onclick="setAOStatus('open')">📋 Open</button>
+    <button class="ov-tab" data-ao-status="archived" onclick="setAOStatus('archived')">📦 Archived</button>
+    <div class="ov-sep"></div>
+    <button class="ov-tab active" data-ao-pri="all" onclick="toggleAOPri('all')">All</button>
+    <button class="ov-tab" data-ao-pri="high" onclick="toggleAOPri('high')">🔴 High</button>
+    <button class="ov-tab" data-ao-pri="med" onclick="toggleAOPri('med')">🟡 Med</button>
+    <button class="ov-tab" data-ao-pri="low" onclick="toggleAOPri('low')">🔵 Low</button>
+    <div class="ov-sep"></div>
+    <select class="ov-sort" id="aoSort" onchange="renderAO()">
+      <option value="priority">Sort: Priority</option>
+      <option value="subject">Group: Subject</option>
+      <option value="date">Sort: Date ↓</option>
+      <option value="az">Sort: A→Z</option>
+    </select>
+    <input class="ov-search" id="aoSearch" placeholder="Search…" oninput="renderAO()">
+  </div>
+  <div class="ov-body" id="aoBody"></div>
 </div>
 
 <!-- LINKS REPORT OVERLAY -->
@@ -760,6 +865,8 @@ let activeDd = null;
 let fmMode = '', fmEditId = null;
 let mvItemId = null;
 let confirmCb = null;
+let hist = [];
+let hIdx = -1;
 
 // ════════════════════════════════════════════════════════
 // UTILS
@@ -1044,6 +1151,35 @@ function scheduleSave(){
   saveTimer=setTimeout(saveData,1500);
 }
 function save(schedule=true){ if(schedule) scheduleSave(); else saveData(); }
+function pushHist(){
+  // Trim any redo history beyond current index
+  hist=hist.slice(0,hIdx+1);
+  hist.push(JSON.stringify(D));
+  if(hist.length>50)hist.shift();
+  hIdx=hist.length-1;
+  updateUndoRedoBtns();
+}
+function undo(){
+  if(hIdx<=0)return;
+  hIdx--;
+  D=migrateData(JSON.parse(hist[hIdx]));
+  save();render();
+  updateUndoRedoBtns();
+  toast('Undo');
+}
+function redo(){
+  if(hIdx>=hist.length-1)return;
+  hIdx++;
+  D=migrateData(JSON.parse(hist[hIdx]));
+  save();render();
+  updateUndoRedoBtns();
+  toast('Redo');
+}
+function updateUndoRedoBtns(){
+  const ub=document.getElementById('undoBtn');const rb=document.getElementById('redoBtn');
+  if(ub)ub.disabled=hIdx<=0;
+  if(rb)rb.disabled=hIdx>=hist.length-1;
+}
 function setSyncStatus(state,text){
   const pill=document.getElementById('syncPill');
   const txt=document.getElementById('syncTxt');
@@ -1076,6 +1212,8 @@ function migrateData(d){
 }
 function showApp(){
   document.getElementById('mainApp').style.display='flex';
+  // Seed undo history with initial state
+  hist=[JSON.stringify(D)];hIdx=0;updateUndoRedoBtns();
   render();
   loadPrefs();
   initResizers();
@@ -1096,6 +1234,7 @@ function render(){
   document.getElementById('addSubSubBtn').disabled=!selSub;
   document.getElementById('addSecBtn').disabled=!selSS;
   document.getElementById('addBmBtn').disabled=!selSec;
+  updateActionsBadge();
 }
 function renderSubjects(){
   const list=document.getElementById('listSubject');
@@ -1181,6 +1320,7 @@ function renderBookmarks(){
   if(linkSort==='az') items.sort((a,b)=>a.title.localeCompare(b.title));
   else if(linkSort==='za') items.sort((a,b)=>b.title.localeCompare(a.title));
   else if(linkSort==='date') items.sort((a,b)=>{ const da=a.itemDate||'',db=b.itemDate||''; if(!da&&!db)return 0; if(!da)return 1; if(!db)return-1; return db.localeCompare(da); });
+  else if(linkSort==='priority'){ const priOrder={high:0,med:1,low:2};items.sort((a,b)=>{const pa=a.priority?priOrder[a.priority]??3:3;const pb=b.priority?priOrder[b.priority]??3:3;return pa!==pb?pa-pb:(a.order||0)-(b.order||0);}); }
   else items.sort((a,b)=>(a.order||0)-(b.order||0));
   if(!items.length){
     const msg=itemFilter==='tasks'?'No bookmarks with open tasks in this section.':itemFilter==='archived'?'No archived bookmarks.':'No bookmarks in this section yet.';
@@ -1262,8 +1402,12 @@ function buildCard(bm){
     card.appendChild(body);
     wireClAdd(body.querySelector('.cl-add-input'), bm.id);
   }
+  // Wire tooltip
+  card.addEventListener('mouseenter',e=>showBmTooltip(e,bm.id));
+  card.addEventListener('mouseleave',()=>hideBmTooltip());
+  card.addEventListener('mousemove',e=>{const tt=document.getElementById('bmTooltip');if(tt.style.display==='block'){let top=e.clientY+12,left=e.clientX+12;if(top+tt.offsetHeight>window.innerHeight)top=e.clientY-tt.offsetHeight-8;if(left+tt.offsetWidth>window.innerWidth)left=e.clientX-tt.offsetWidth-8;tt.style.top=top+'px';tt.style.left=left+'px';}});
   // Wire context menu
-  card.addEventListener('contextmenu',e=>{ e.preventDefault(); showCtx(e, bm.id); });
+  card.addEventListener('contextmenu',e=>{ e.preventDefault(); hideBmTooltip(); showCtx(e, bm.id); });
   // Wire drag
   card.draggable=true;
   card.addEventListener('dragstart',e=>{ dragItemId=bm.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
@@ -1303,6 +1447,7 @@ function wireClAdd(textarea, bmId){
       const text=textarea.value.replace(/\n/g,' ').trim();
       if(!text)return;
       const f=findBm(bmId); if(!f)return;
+      pushHist();
       if(!f.bm.checklist)f.bm.checklist=[];
       f.bm.checklist.push({id:uid(),text,checked:false});
       textarea.value='';textarea.style.height='auto';
@@ -1324,6 +1469,7 @@ function wireClAdd(textarea, bmId){
 function toggleClItem(bmId, clId, checked){
   const f=findBm(bmId); if(!f)return;
   const c=f.bm.checklist.find(x=>x.id===clId); if(!c)return;
+  pushHist();
   c.checked=checked;
   save();
   updateClProgress(bmId, f.bm);
@@ -1336,6 +1482,7 @@ function toggleClItem(bmId, clId, checked){
 }
 function delClItem(bmId, clId){
   const f=findBm(bmId); if(!f)return;
+  pushHist();
   f.bm.checklist=f.bm.checklist.filter(c=>c.id!==clId);
   save();
   const body=document.getElementById('clb-'+bmId);
@@ -1396,6 +1543,7 @@ function wireInlineTag(wrap, bmId){
       e.stopPropagation();
       const t=pill.dataset.tag;
       const f=findBm(bmId);if(!f)return;
+      pushHist();
       f.bm.tags=(f.bm.tags||[]).filter(x=>x!==t);
       save();
       renderBookmarks();renderTagFilterBar();
@@ -1440,7 +1588,7 @@ function addTagToBm(bmId, tag){
   tag=tag.trim();if(!tag)return;
   const f=findBm(bmId);if(!f)return;
   if(!f.bm.tags)f.bm.tags=[];
-  if(!f.bm.tags.includes(tag))f.bm.tags.push(tag);
+  if(!f.bm.tags.includes(tag)){pushHist();f.bm.tags.push(tag);}
   save();
   renderBookmarks();renderTagFilterBar();
 }
@@ -1527,7 +1675,7 @@ function showPriPopup(e, bmId){
     const d=document.createElement('div');
     d.className='pri-popup-opt'+(cur===val?' cur':'');
     d.textContent=lbl;
-    d.addEventListener('mousedown',ev=>{ ev.preventDefault();ev.stopPropagation(); f.bm.priority=val||undefined; save(); closePriPopup(); renderBookmarks(); });
+    d.addEventListener('mousedown',ev=>{ ev.preventDefault();ev.stopPropagation(); pushHist(); f.bm.priority=val||undefined; save(); closePriPopup(); renderBookmarks(); });
     pop.appendChild(d);
   });
   document.body.appendChild(pop);
@@ -1540,6 +1688,40 @@ function showPriPopup(e, bmId){
   setTimeout(()=>document.addEventListener('click',closePriPopup,{once:true}),0);
 }
 function closePriPopup(){ if(priPopupEl){priPopupEl.remove();priPopupEl=null;} document.removeEventListener('click',closePriPopup); }
+
+// ════════════════════════════════════════════════════════
+// HOVER TOOLTIP
+// ════════════════════════════════════════════════════════
+let ttTimer=null;
+function showBmTooltip(e,bmId){
+  clearTimeout(ttTimer);
+  ttTimer=setTimeout(()=>{
+    const f=findBm(bmId);if(!f)return;
+    const bm=f.bm;
+    const tt=document.getElementById('bmTooltip');
+    const primaryUrl=bm.urls&&bm.urls[0];
+    const domain=primaryUrl?getDomain(primaryUrl.url):'';
+    const urlCount=bm.urls?bm.urls.length:0;
+    let html=`<div class="tt-title">${esc(bm.title)}</div>`;
+    if(domain)html+=`<div class="tt-row">${getIcon(primaryUrl.url)} <b>${esc(domain)}</b></div>`;
+    if(urlCount>1)html+=`<div class="tt-row">📎 ${urlCount} URLs</div>`;
+    if(bm.priority){const priLbl={high:'🔴 High',med:'🟡 Medium',low:'🔵 Low'}[bm.priority];html+=`<div class="tt-row">Priority: <b>${priLbl}</b></div>`;}
+    if(bm.dateAdded)html+=`<div class="tt-row">Added: ${bm.dateAdded}</div>`;
+    if(bm.lastOpened)html+=`<div class="tt-row">Last opened: ${bm.lastOpened}</div>`;
+    if(bm.itemDate)html+=`<div class="tt-row">Date: ${formatDate(bm.itemDate)}</div>`;
+    if(bm.checklist&&bm.checklist.length){const done=bm.checklist.filter(c=>c.checked).length;html+=`<div class="tt-row">Tasks: ${done}/${bm.checklist.length}</div>`;}
+    if(bm.tags&&bm.tags.length)html+=`<div class="tt-tags">${bm.tags.map(t=>tagHTML(t)).join('')}</div>`;
+    tt.innerHTML=html;
+    tt.style.display='block';
+    // Position
+    const r=tt.getBoundingClientRect();
+    let top=e.clientY+12,left=e.clientX+12;
+    if(top+r.height>window.innerHeight)top=e.clientY-r.height-8;
+    if(left+r.width>window.innerWidth)left=e.clientX-r.width-8;
+    tt.style.top=top+'px';tt.style.left=left+'px';
+  },400);
+}
+function hideBmTooltip(){ clearTimeout(ttTimer); document.getElementById('bmTooltip').style.display='none'; }
 
 // ════════════════════════════════════════════════════════
 // BOOKMARK CRUD
@@ -1605,6 +1787,7 @@ function fillBmSec(){
 document.getElementById('saveBmBtn').addEventListener('click',()=>{
   const title=document.getElementById('bmTitle').value.trim();
   if(!title){toast('Title is required','error');return;}
+  pushHist();
   const subId=document.getElementById('bmSubject').value;
   const ssId=document.getElementById('bmSubSub').value;
   const secId=document.getElementById('bmSection').value;
@@ -1630,6 +1813,7 @@ document.getElementById('saveBmBtn').addEventListener('click',()=>{
 });
 function archiveBm(id){
   const f=findBm(id);if(!f)return;
+  pushHist();
   f.bm.status=f.bm.status==='archived'?'open':'archived';
   save();render();
   toast(f.bm.status==='archived'?'Archived':'Restored');
@@ -1638,6 +1822,7 @@ function deleteBm(id){
   const f=findBm(id);if(!f)return;
   document.getElementById('confirmMsg').textContent=`Delete "${f.bm.title}"? This cannot be undone.`;
   document.getElementById('confirmOkBtn').onclick=()=>{
+    pushHist();
     f.sec.bookmarks=f.sec.bookmarks.filter(b=>b.id!==id);
     D.recent=(D.recent||[]).filter(r=>r.id!==id);
     save();render();closeModal('confirmModal');toast('Deleted');
@@ -1646,6 +1831,7 @@ function deleteBm(id){
 }
 function reorderBm(fromId, toId){
   const sec=getSec(selSub,selSS,selSec);if(!sec)return;
+  pushHist();
   const fromIdx=sec.bookmarks.findIndex(b=>b.id===fromId);
   const toIdx=sec.bookmarks.findIndex(b=>b.id===toId);
   if(fromIdx<0||toIdx<0)return;
@@ -1667,19 +1853,52 @@ function buildUrlRows(){
   modalUrls.forEach((u,i)=>{
     const isInt=u.linkType==='internal'||isInternal(u.url);
     const intBadge=isInt?`<span class="url-type-tog internal">🔗 Internal</span>`:'';
-    const row=document.createElement('div');row.className='url-row';
-    const urlDisplay=isInt
+    const row=document.createElement('div');row.className='url-row';row.style.flexDirection='column';row.style.gap='2px';
+    const inputRow=document.createElement('div');inputRow.style.cssText='display:flex;align-items:center;gap:5px;width:100%;';
+    const urlInput=isInt
       ?`<input class="url-url-in" value="${esc(getILLabel(u.url))}" readonly style="color:var(--dim);font-size:11px;">`
-      :`<input class="url-url-in" placeholder="https://…" value="${esc(u.url||'')}" oninput="modalUrls[${i}].url=this.value;if(isInternal(this.value)){modalUrls[${i}].linkType='internal';modalUrls[${i}].label=modalUrls[${i}].label||getILLabel(this.value);}">`;
-    row.innerHTML=`<span class="url-dh">⠿</span>
+      :`<input class="url-url-in" placeholder="https://…" value="${esc(u.url||'')}" data-urlidx="${i}">`;
+    inputRow.innerHTML=`<span class="url-dh">⠿</span>
       <input class="url-lbl-in" placeholder="Label" value="${esc(u.label||'')}" oninput="modalUrls[${i}].label=this.value">
-      ${urlDisplay}
+      ${urlInput}
       ${isInt?intBadge:''}
       <button class="url-del" onclick="modalUrls.splice(${i},1);buildUrlRows()">✕</button>`;
+    row.appendChild(inputRow);
+    // Wire URL input events
+    const urlIn=inputRow.querySelector('.url-url-in[data-urlidx]');
+    if(urlIn){
+      urlIn.addEventListener('input',function(){
+        modalUrls[i].url=this.value;
+        if(isInternal(this.value)){modalUrls[i].linkType='internal';modalUrls[i].label=modalUrls[i].label||getILLabel(this.value);}
+        // Check for duplicates
+        const dupWarn=row.querySelector('.dup-warn');
+        const dup=checkDuplicateUrl(this.value);
+        if(dup){
+          if(dupWarn)dupWarn.innerHTML=`⚠️ Already saved as "${esc(dup.title)}" in ${esc(dup.loc)}`;
+          else{const w=document.createElement('div');w.className='dup-warn';w.style.cssText='font-size:11px;color:var(--amber);padding:2px 0 0 22px;';w.innerHTML=`⚠️ Already saved as "${esc(dup.title)}" in ${esc(dup.loc)}`;row.appendChild(w);}
+        } else if(dupWarn)dupWarn.remove();
+      });
+      // Initial check for existing URLs
+      const dup=checkDuplicateUrl(u.url);
+      if(dup){const w=document.createElement('div');w.className='dup-warn';w.style.cssText='font-size:11px;color:var(--amber);padding:2px 0 0 22px;';w.innerHTML=`⚠️ Already saved as "${esc(dup.title)}" in ${esc(dup.loc)}`;row.appendChild(w);}
+    }
     rows.appendChild(row);
   });
 }
 function addUrlRow(){ modalUrls.push({id:uid(),label:'',url:'',linkType:'web'});buildUrlRows(); }
+function checkDuplicateUrl(url){
+  if(!url||isInternal(url))return null;
+  url=url.trim().toLowerCase().replace(/\/$/,'');
+  if(!url)return null;
+  for(const s of D.subjects) for(const ss of s.subSubjects) for(const sec of ss.sections) for(const bm of sec.bookmarks){
+    if(editId&&bm.id===editId)continue;
+    for(const u of(bm.urls||[])){
+      if(u.url&&u.url.trim().toLowerCase().replace(/\/$/,'')===url)
+        return{title:bm.title,loc:`${s.title} › ${ss.title} › ${sec.title}`};
+    }
+  }
+  return null;
+}
 
 // ════════════════════════════════════════════════════════
 // MODAL TAGS
@@ -1729,6 +1948,7 @@ function openFM(mode, editId_=null){
 function saveFM(){
   const name=document.getElementById('fmName').value.trim();
   if(!name)return;
+  pushHist();
   if(fmEditId){
     if(fmMode==='subject'){const s=getSub(fmEditId);if(s)s.title=name;}
     else if(fmMode==='subsub'){const ss=getSS(selSub,fmEditId);if(ss)ss.title=name;}
@@ -1760,6 +1980,7 @@ function deleteFolder(type, id){
   else if(type==='section'){const sec=getSec(selSub,selSS,id);if(!sec)return;name=sec.title;hasChildren=sec.bookmarks.length>0;}
   document.getElementById('confirmMsg').textContent=`Delete "${name}"?`+(hasChildren?' This will delete all contents.':'')+' Cannot be undone.';
   document.getElementById('confirmOkBtn').onclick=()=>{
+    pushHist();
     if(type==='subject'){D.subjects=D.subjects.filter(s=>s.id!==id);if(selSub===id){selSub=null;selSS=null;selSec=null;}}
     else if(type==='subsub'){const s=getSub(selSub);if(s)s.subSubjects=s.subSubjects.filter(ss=>ss.id!==id);if(selSS===id){selSS=null;selSec=null;}}
     else if(type==='section'){const ss=getSS(selSub,selSS);if(ss)ss.sections=ss.sections.filter(s=>s.id!==id);if(selSec===id)selSec=null;}
@@ -1787,6 +2008,7 @@ function attachFolderDrop(el, type, id){
   });
 }
 function reorderFolder(type, fromId, toId){
+  pushHist();
   let arr=null;
   if(type==='subject') arr=D.subjects;
   else if(type==='subsub'){const s=getSub(selSub);arr=s?.subSubjects;}
@@ -1820,6 +2042,7 @@ function fillMvSec(){
 document.getElementById('mvSaveBtn').addEventListener('click',()=>{
   if(!mvItemId)return;
   const f=findBm(mvItemId);if(!f)return;
+  pushHist();
   const subId=document.getElementById('mvSub').value;const ssId=document.getElementById('mvSubSub').value;const secId=document.getElementById('mvSec').value;
   const targetSec=getSec(subId,ssId,secId);if(!targetSec)return;
   f.sec.bookmarks=f.sec.bookmarks.filter(b=>b.id!==mvItemId);
@@ -1837,6 +2060,25 @@ function showCtx(e, id){
   const f=findBm(id);if(!f)return;
   document.getElementById('ctx-archive').textContent=f.bm.status==='archived'?'🔄 Restore':'📦 Archive';
   document.getElementById('ctx-restore').style.display='none';
+  // Multi-URL submenu
+  const urlsSub=document.getElementById('ctx-urls-sub');
+  urlsSub.innerHTML='';
+  if(f.bm.urls&&f.bm.urls.length>1){
+    urlsSub.style.display='block';
+    f.bm.urls.forEach((u,i)=>{
+      const item=document.createElement('div');item.className='ctx-item';item.style.paddingLeft='28px';item.style.fontSize='12px';
+      item.innerHTML=`${getIcon(u.url)} ${esc(u.label||'Link '+(i+1))} <span style="color:var(--dim);font-size:10px;margin-left:4px;">${esc(getDomain(u.url))}</span>`;
+      item.addEventListener('click',()=>{openUrl(u.url,id);hideCtx();});
+      urlsSub.appendChild(item);
+    });
+  } else urlsSub.style.display='none';
+  // Priority submenu — highlight current
+  const curPri=f.bm.priority||'';
+  document.querySelectorAll('#ctx-pri-sub [data-pri]').forEach(el=>{
+    el.style.fontWeight=el.dataset.pri===curPri?'700':'400';
+    el.style.color=el.dataset.pri===curPri?'var(--accent)':'';
+  });
+  document.getElementById('ctx-pri-sub').style.display='none';
   ctxMenu.style.left=e.clientX+'px';ctxMenu.style.top=e.clientY+'px';ctxMenu.classList.add('vis');
   const r=ctxMenu.getBoundingClientRect();
   if(r.right>innerWidth)ctxMenu.style.left=(e.clientX-r.width)+'px';
@@ -1850,6 +2092,13 @@ document.getElementById('ctx-move').addEventListener('click',()=>{openMoveModal(
 document.getElementById('ctx-archive').addEventListener('click',()=>{archiveBm(ctxId);hideCtx();});
 document.getElementById('ctx-restore').addEventListener('click',()=>{archiveBm(ctxId);hideCtx();});
 document.getElementById('ctx-delete').addEventListener('click',()=>{deleteBm(ctxId);hideCtx();});
+document.getElementById('ctx-pri-toggle').addEventListener('click',e=>{e.stopPropagation();document.getElementById('ctx-pri-sub').style.display=document.getElementById('ctx-pri-sub').style.display==='none'?'block':'none';});
+document.querySelectorAll('#ctx-pri-sub [data-pri]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    if(!ctxId)return;const f=findBm(ctxId);if(!f)return;
+    pushHist();f.bm.priority=el.dataset.pri||undefined;save();renderBookmarks();hideCtx();
+  });
+});
 document.addEventListener('click',()=>hideCtx());
 
 // ════════════════════════════════════════════════════════
@@ -2040,8 +2289,13 @@ function kbRight(){
 }
 function initKeyboard(){
   document.addEventListener('keydown',e=>{
+    // Undo/Redo — works globally (even in inputs)
+    if((e.ctrlKey||e.metaKey)&&!e.altKey){
+      if(e.key==='z'&&!e.shiftKey){e.preventDefault();undo();return;}
+      if(e.key==='y'||(e.key==='z'&&e.shiftKey)){e.preventDefault();redo();return;}
+    }
     const inInp=document.activeElement&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
-    const modalOpen=['bmModal','folderModal','moveModal','intLinkModal','confirmModal','tagBrowserModal','settingsModal'].some(id=>document.getElementById(id).style.display!=='none');
+    const modalOpen=['bmModal','folderModal','moveModal','intLinkModal','confirmModal','tagBrowserModal','settingsModal','bulkImportModal'].some(id=>document.getElementById(id).style.display!=='none');
     const projOpen=document.getElementById('projOverlay').classList.contains('vis');
     if(modalOpen||projOpen)return;
     if(sRes.classList.contains('vis')&&['ArrowDown','ArrowUp','Enter','Escape'].includes(e.key))return;
@@ -2058,7 +2312,7 @@ function initKeyboard(){
       }
       else if(e.key==='Enter')kbSelect();
       else if(e.key==='Escape'){
-        ['bmModal','folderModal','moveModal','intLinkModal','confirmModal','tagBrowserModal','settingsModal'].forEach(id=>{if(document.getElementById(id).style.display!=='none')closeModal(id);});
+        ['bmModal','folderModal','moveModal','intLinkModal','confirmModal','tagBrowserModal','settingsModal','bulkImportModal'].forEach(id=>{if(document.getElementById(id).style.display!=='none')closeModal(id);});
       }
     }
     if(e.key==='Escape'&&sRes.classList.contains('vis')){sRes.classList.remove('vis');sResIdx=-1;}
@@ -2414,6 +2668,179 @@ function exportLinksHTML(){
 }
 
 // ════════════════════════════════════════════════════════
+// ACTIONS OVERLAY
+// ════════════════════════════════════════════════════════
+let aoStatus='open',aoPri='all';
+function openActionsOverlay(){ document.getElementById('actionsOverlay').classList.add('vis'); renderAO(); }
+function closeActionsOverlay(){ document.getElementById('actionsOverlay').classList.remove('vis'); }
+function resetAO(){ aoStatus='open';aoPri='all';document.getElementById('aoSearch').value='';document.getElementById('aoSort').value='priority';document.querySelectorAll('[data-ao-status]').forEach(b=>b.classList.toggle('active',b.dataset.aoStatus==='open'));document.querySelectorAll('[data-ao-pri]').forEach(b=>b.classList.toggle('active',b.dataset.aoPri==='all'));renderAO(); }
+function setAOStatus(s){ aoStatus=s;document.querySelectorAll('[data-ao-status]').forEach(b=>b.classList.toggle('active',b.dataset.aoStatus===s));renderAO(); }
+function toggleAOPri(p){ aoPri=p;document.querySelectorAll('[data-ao-pri]').forEach(b=>b.classList.toggle('active',b.dataset.aoPri===p));renderAO(); }
+function getActionItems(){
+  const items=[];
+  D.subjects.forEach(sub=>sub.subSubjects.forEach(ss=>ss.sections.forEach(sec=>
+    sec.bookmarks.forEach(bm=>{
+      const hasTasks=(bm.checklist||[]).length>0;
+      const hasPri=!!bm.priority;
+      if(hasTasks||hasPri) items.push({bm,sec,ss,sub});
+    })
+  )));
+  return items;
+}
+function renderAO(){
+  const body=document.getElementById('aoBody');body.innerHTML='';
+  const q=document.getElementById('aoSearch').value.trim().toLowerCase();
+  const sort=document.getElementById('aoSort').value;
+  let items=getActionItems();
+  // Filter by status
+  items=items.filter(f=>aoStatus==='archived'?f.bm.status==='archived':f.bm.status!=='archived');
+  // Filter by priority
+  if(aoPri!=='all')items=items.filter(f=>(f.bm.priority||'')===(aoPri==='all'?f.bm.priority||'':aoPri));
+  // Filter by search
+  if(q)items=items.filter(f=>f.bm.title.toLowerCase().includes(q)||(f.bm.tags||[]).some(t=>t.toLowerCase().includes(q)));
+  // Stats
+  const totalTasks=items.reduce((a,f)=>a+(f.bm.checklist||[]).length,0);
+  const doneTasks=items.reduce((a,f)=>a+(f.bm.checklist||[]).filter(c=>c.checked).length,0);
+  document.getElementById('aoStats').textContent=`${items.length} items · ${doneTasks}/${totalTasks} tasks done`;
+  if(!items.length){body.innerHTML='<div class="ov-empty">No action items match current filters.</div>';return;}
+  // Sort
+  const priOrder={high:0,med:1,low:2};
+  if(sort==='priority')items.sort((a,b)=>{const pa=a.bm.priority?priOrder[a.bm.priority]??3:3;const pb=b.bm.priority?priOrder[b.bm.priority]??3:3;return pa!==pb?pa-pb:a.bm.title.localeCompare(b.bm.title);});
+  else if(sort==='az')items.sort((a,b)=>a.bm.title.localeCompare(b.bm.title));
+  else if(sort==='date')items.sort((a,b)=>{const da=a.bm.dateAdded||'',db=b.bm.dateAdded||'';if(!da&&!db)return 0;if(!da)return 1;if(!db)return-1;return db.localeCompare(da);});
+  // Render
+  if(sort==='subject'){
+    const grps={};
+    items.forEach(f=>{const k=f.sub.title;if(!grps[k])grps[k]={label:'📂 '+f.sub.title,items:[]};grps[k].items.push(f);});
+    Object.values(grps).forEach(g=>{
+      const hdr=document.createElement('div');hdr.className='ov-group-hdr';hdr.textContent=g.label;body.appendChild(hdr);
+      g.items.forEach(f=>body.appendChild(buildAORow(f)));
+    });
+  } else {
+    items.forEach(f=>body.appendChild(buildAORow(f)));
+  }
+}
+function buildAORow(f){
+  const bm=f.bm;
+  const el=document.createElement('div');el.className='ov-row';el.style.flexDirection='column';el.style.gap='6px';
+  const priH=bm.priority?`<span class="pri-badge ${bm.priority}" style="cursor:pointer;" onclick="event.stopPropagation();showPriPopup(event,'${bm.id}')">${{high:'🔴 HIGH',med:'🟡 MED',low:'🔵 LOW'}[bm.priority]}</span>`:'';
+  const openTasks=(bm.checklist||[]).filter(c=>!c.checked);
+  const doneTasks=(bm.checklist||[]).filter(c=>c.checked);
+  const totalTasks=(bm.checklist||[]).length;
+  const progressH=totalTasks?`<span style="font-size:10px;color:${openTasks.length===0?'var(--green)':'var(--dim)'};background:var(--bg4);padding:1px 6px;border-radius:10px;">${doneTasks.length}/${totalTasks}${openTasks.length===0?' ✓':''}</span>`:'';
+  // Top row
+  let topHtml=`<div style="display:flex;align-items:flex-start;gap:9px;width:100%;">
+    <div class="ov-icon">${getIcon(bm.urls?.[0]?.url||'')}</div>
+    <div class="ov-info" style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="ov-item-title" onclick="selSub='${f.sub.id}';selSS='${f.ss.id}';selSec='${f.sec.id}';render();closeActionsOverlay();setTimeout(()=>{const c=document.querySelector('.bm-card[data-id=\\'${bm.id}\\']');if(c){c.scrollIntoView({block:'nearest'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1400);}},80);">${esc(bm.title)}</span>
+        ${priH}${progressH}
+      </div>
+      <div class="ov-item-bc">${esc(f.sub.title)} › ${esc(f.ss.title)} › ${esc(f.sec.title)}</div>
+      ${(bm.tags||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;">${bm.tags.map(t=>tagHTML(t)).join('')}</div>`:''}
+    </div>
+    <div style="display:flex;gap:4px;flex-shrink:0;">
+      <button class="lab" onclick="event.stopPropagation();openBmModal('${bm.id}');closeActionsOverlay();">Edit</button>
+      <button class="lab" onclick="event.stopPropagation();archiveBm('${bm.id}');renderAO();">${bm.status==='archived'?'Restore':'Archive'}</button>
+    </div>
+  </div>`;
+  el.innerHTML=topHtml;
+  // Checklist items (inline toggleable)
+  if(totalTasks){
+    const clDiv=document.createElement('div');clDiv.style.cssText='padding-left:36px;';
+    openTasks.forEach(c=>{
+      const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:6px;padding:2px 0;';
+      row.innerHTML=`<input type="checkbox" style="cursor:pointer;accent-color:var(--accent);margin-top:2px;" onchange="toggleClItem('${bm.id}','${c.id}',this.checked);renderAO();">
+        <span style="font-size:12px;color:var(--text);">${esc(c.text)}</span>`;
+      clDiv.appendChild(row);
+    });
+    if(doneTasks.length){
+      const showDone=document.createElement('div');showDone.style.cssText='font-size:11px;color:var(--dim);cursor:pointer;padding:2px 0;';
+      showDone.textContent=`▸ Show ${doneTasks.length} completed`;
+      showDone.addEventListener('click',function(){
+        if(this.nextSibling&&this.nextSibling.style.display!=='none'){this.nextSibling.style.display='none';this.textContent=`▸ Show ${doneTasks.length} completed`;return;}
+        if(this.nextSibling){this.nextSibling.style.display='block';this.textContent=`▾ Hide ${doneTasks.length} completed`;return;}
+        const doneDiv=document.createElement('div');
+        doneTasks.forEach(c=>{
+          const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:6px;padding:2px 0;';
+          row.innerHTML=`<input type="checkbox" checked style="cursor:pointer;accent-color:var(--accent);margin-top:2px;" onchange="toggleClItem('${bm.id}','${c.id}',this.checked);renderAO();">
+            <span style="font-size:12px;color:var(--dim);text-decoration:line-through;">${esc(c.text)}</span>`;
+          doneDiv.appendChild(row);
+        });
+        this.after(doneDiv);this.textContent=`▾ Hide ${doneTasks.length} completed`;
+      });
+      clDiv.appendChild(showDone);
+    }
+    el.appendChild(clDiv);
+  }
+  return el;
+}
+function updateActionsBadge(){
+  const badge=document.getElementById('actionsBadge');if(!badge)return;
+  let count=0;
+  D.subjects.forEach(s=>s.subSubjects.forEach(ss=>ss.sections.forEach(sec=>
+    sec.bookmarks.forEach(bm=>{if(bm.status!=='archived'&&bm.priority==='high')count++;})
+  )));
+  if(count){badge.style.display='';badge.textContent=count;}else badge.style.display='none';
+}
+
+// ════════════════════════════════════════════════════════
+// BULK IMPORT
+// ════════════════════════════════════════════════════════
+function openBulkImport(){
+  document.getElementById('bulkUrls').value='';
+  document.getElementById('bulkPreview').textContent='';
+  // Fill location dropdowns
+  const subSel=document.getElementById('bulkSub');
+  subSel.innerHTML=D.subjects.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join('');
+  if(selSub)subSel.value=selSub;
+  fillBulkSS();
+  openModal('bulkImportModal');
+  setTimeout(()=>document.getElementById('bulkUrls').focus(),80);
+}
+function fillBulkSS(){
+  const subId=document.getElementById('bulkSub').value;const sub=getSub(subId);
+  const ssSel=document.getElementById('bulkSubSub');
+  ssSel.innerHTML=sub?(sub.subSubjects.map(ss=>`<option value="${ss.id}">${esc(ss.title)}</option>`).join('')||'<option value="">—</option>'):'<option value="">—</option>';
+  if(selSS&&sub&&sub.subSubjects.find(ss=>ss.id===selSS))ssSel.value=selSS;
+  fillBulkSec();
+}
+function fillBulkSec(){
+  const subId=document.getElementById('bulkSub').value;const ssId=document.getElementById('bulkSubSub').value;const ss=getSS(subId,ssId);
+  const secSel=document.getElementById('bulkSec');
+  secSel.innerHTML=ss?(ss.sections.map(sec=>`<option value="${sec.id}">${esc(sec.title)}</option>`).join('')||'<option value="">—</option>'):'<option value="">—</option>';
+  if(selSec&&ss&&ss.sections.find(s=>s.id===selSec))secSel.value=selSec;
+}
+function parseBulkUrls(){
+  const text=document.getElementById('bulkUrls').value;
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l&&(l.startsWith('http://')||l.startsWith('https://')));
+  return lines;
+}
+document.getElementById('bulkUrls').addEventListener('input',()=>{
+  const urls=parseBulkUrls();
+  document.getElementById('bulkPreview').textContent=urls.length?`${urls.length} URL${urls.length>1?'s':''} detected`:'Paste URLs (one per line)';
+});
+document.getElementById('bulkImportBtn').addEventListener('click',()=>{
+  const urls=parseBulkUrls();
+  if(!urls.length){toast('No valid URLs found','error');return;}
+  const subId=document.getElementById('bulkSub').value;
+  const ssId=document.getElementById('bulkSubSub').value;
+  const secId=document.getElementById('bulkSec').value;
+  const sec=getSec(subId,ssId,secId);
+  if(!sec){toast('Please select a valid location','error');return;}
+  pushHist();
+  urls.forEach(url=>{
+    let title=url;
+    try{title=new URL(url).hostname;}catch{}
+    sec.bookmarks.push({id:uid(),title,urls:[{id:uid(),label:'',url,linkType:'web'}],tags:[],checklist:[],dateAdded:new Date().toISOString().slice(0,10),status:'open',order:sec.bookmarks.length});
+  });
+  save();render();closeModal('bulkImportModal');
+  toast(`Imported ${urls.length} bookmark${urls.length>1?'s':''}`);
+  // Navigate to the target section
+  selSub=subId;selSS=ssId;selSec=secId;render();
+});
+
+// ════════════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════════════
 async function saveSettings(){
@@ -2433,12 +2860,47 @@ async function saveSettings(){
 function exportJSON(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:'application/json'}));a.download='link-organiser-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Backup exported');
 }
+function exportBookmarksHTML(){
+  const now=new Date();const ts=Math.floor(now.getTime()/1000);
+  let html=`<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>\n`;
+  D.subjects.forEach(sub=>{
+    html+=`    <DT><H3 ADD_DATE="${ts}">${esc(sub.title)}</H3>\n    <DL><p>\n`;
+    sub.subSubjects.forEach(ss=>{
+      html+=`        <DT><H3 ADD_DATE="${ts}">${esc(ss.title)}</H3>\n        <DL><p>\n`;
+      ss.sections.forEach(sec=>{
+        html+=`            <DT><H3 ADD_DATE="${ts}">${esc(sec.title)}</H3>\n            <DL><p>\n`;
+        sec.bookmarks.filter(b=>b.status!=='archived').forEach(bm=>{
+          const url=(bm.urls&&bm.urls[0])?bm.urls[0].url:'';
+          if(url&&!isInternal(url)){
+            const addDate=bm.dateAdded?Math.floor(new Date(bm.dateAdded).getTime()/1000):ts;
+            const tags=(bm.tags||[]).join(',');
+            html+=`                <DT><A HREF="${esc(url)}" ADD_DATE="${addDate}"${tags?' TAGS="'+esc(tags)+'"':''}>${esc(bm.title)}</A>\n`;
+          }
+        });
+        html+=`            </DL><p>\n`;
+      });
+      html+=`        </DL><p>\n`;
+    });
+    html+=`    </DL><p>\n`;
+  });
+  html+=`</DL><p>\n`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=`bookmarks_${now.toISOString().slice(0,10)}.html`;a.click();
+  toast('Bookmarks exported (browser-importable)');
+}
 function importJSON(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
     try{
       const parsed=JSON.parse(e.target.result);
+      pushHist();
       D=migrateData(parsed);
       save();render();closeModal('settingsModal');toast('Data imported successfully');
     }catch{toast('Invalid JSON file','error');}
@@ -2456,8 +2918,15 @@ function toggleTheme(){
   if(settingBtn)settingBtn.textContent=light?'Switch to Dark Mode':'Switch to Light Mode';
   localStorage.setItem('lo-theme',light?'light':'dark');
 }
+function setDensity(mode){
+  document.body.classList.toggle('compact',mode==='compact');
+  document.getElementById('denComfy').classList.toggle('active',mode==='comfy');
+  document.getElementById('denCompact').classList.toggle('active',mode==='compact');
+  localStorage.setItem('lo-density',mode);
+}
 function loadPrefs(){
   if(localStorage.getItem('lo-theme')==='light'){document.body.classList.add('light');document.getElementById('themeBtn').textContent='☀️';}
+  if(localStorage.getItem('lo-density')==='compact')setDensity('compact');
 }
 
 // ════════════════════════════════════════════════════════
