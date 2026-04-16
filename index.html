@@ -1990,20 +1990,21 @@ function attachFolderDrop(el, type, id){
   });
 }
 function attachBmDrop(el, subId, ssId, secId){
+  // Use capture phase so this fires before attachFolderDrop and can preventDefault
   el.addEventListener('dragover',e=>{
     if(!dragItemId)return;
-    e.preventDefault();e.dataTransfer.dropEffect='move';
+    e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';
     el.classList.add('drop-target-bm');
-  });
+  },true);
   el.addEventListener('dragleave',e=>{
     if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
   });
   el.addEventListener('drop',e=>{
-    e.preventDefault();el.classList.remove('drop-target-bm');
     if(!dragItemId)return;
+    e.preventDefault();e.stopPropagation();el.classList.remove('drop-target-bm');
     moveBmToSection(dragItemId,subId,ssId,secId);
     dragItemId=null;
-  });
+  },true);
 }
 function reorderFolder(type, fromId, toId){
   pushHist();
