@@ -1383,7 +1383,7 @@ function buildCard(bm){
   card.addEventListener('contextmenu',e=>{ e.preventDefault(); hideBmTooltip(); showCtx(e, bm.id); });
   // Wire drag
   card.draggable=true;
-  card.addEventListener('dragstart',e=>{ dragItemId=bm.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+  card.addEventListener('dragstart',e=>{ dragItemId=bm.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',bm.id); });
   card.addEventListener('dragend',()=>{ card.classList.remove('dragging'); dragItemId=null; });
   card.addEventListener('dragover',e=>{ if(!dragItemId||dragItemId===bm.id)return; e.preventDefault(); card.classList.add('drag-over'); });
   card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
