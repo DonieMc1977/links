@@ -142,8 +142,6 @@ header{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;backg
 .bm-card.flash{animation:flashCard 1.2s ease-out;}
 @keyframes flashCard{0%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:none;}}
 .panel-item.drop-target-bm{background:var(--aglow);outline:2px solid var(--accent);outline-offset:-2px;}
-#bmGhost{position:fixed;pointer-events:none;z-index:9999;background:var(--bg2);border:1px solid var(--accent);border-radius:var(--r);padding:5px 11px;font-size:12px;color:var(--bright);font-family:var(--font);box-shadow:0 4px 16px rgba(0,0,0,.5);display:none;gap:5px;align-items:center;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#bmGhost.vis{display:flex;}
 .notes-fmt-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;font-family:var(--font);min-width:24px;transition:all .1s;line-height:1.4;}
 .notes-fmt-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--bright);}
 .bm-main{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;}
@@ -557,7 +555,6 @@ body.compact .panel-label{font-size:9px;}
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
-<div id="bmGhost"></div>
 <div class="bm-tooltip" id="bmTooltip" style="display:none;"></div>
 
 <!-- ══ MODALS ══ -->
@@ -1384,11 +1381,16 @@ function buildCard(bm){
   card.addEventListener('mousemove',e=>{const tt=document.getElementById('bmTooltip');if(tt.style.display==='block'){let top=e.clientY+12,left=e.clientX+12;if(top+tt.offsetHeight>window.innerHeight)top=e.clientY-tt.offsetHeight-8;if(left+tt.offsetWidth>window.innerWidth)left=e.clientX-tt.offsetWidth-8;tt.style.top=top+'px';tt.style.left=left+'px';}});
   // Wire context menu
   card.addEventListener('contextmenu',e=>{ e.preventDefault(); hideBmTooltip(); showCtx(e, bm.id); });
-  // Wire drag (mouse-event based for cross-panel reliability)
-  card.addEventListener('mousedown',e=>{
-    if(e.button!==0||e.target.closest('button,input,textarea,.cl-tag-wrap'))return;
-    bmDragStart(e,bm.id,bm.title,card);
+  // Wire drag (native HTML5 drag-and-drop)
+  card.draggable=true;
+  card.addEventListener('dragstart',e=>{
+    if(e.target.closest('button,input,textarea,.cl-tag-wrap')){e.preventDefault();return;}
+    dragItemId=bm.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';
   });
+  card.addEventListener('dragend',()=>{dragItemId=null;card.classList.remove('dragging');});
+  card.addEventListener('dragover',e=>{if(!dragItemId||dragItemId===bm.id)return;e.preventDefault();card.classList.add('drag-over');});
+  card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(dragItemId&&dragItemId!==bm.id)reorderBm(dragItemId,bm.id);});
   // Wire inline tag input
   wireInlineTag(card.querySelector('.cl-tag-wrap'), bm.id);
   return card;
@@ -1991,56 +1993,20 @@ function attachFolderDrop(el, type, id){
   });
 }
 function attachBmDrop(el, subId, ssId, secId){
-  el.dataset.bmDrop=[subId||'',ssId||'',secId||''].join(',');
-}
-// Mouse-event drag system for cross-panel bookmark moves
-let bmDragState=null;
-function bmDragStart(e,bmId,bmTitle,card){
-  const startX=e.clientX,startY=e.clientY;
-  const onMove=ev=>{
-    const dx=ev.clientX-startX,dy=ev.clientY-startY;
-    if(!bmDragState&&Math.abs(dx)+Math.abs(dy)<8)return;
-    if(!bmDragState){
-      bmDragState={bmId,card};
-      card.classList.add('dragging');
-      dragItemId=bmId;
-      const gh=document.getElementById('bmGhost');
-      gh.textContent='🔗 '+bmTitle;gh.classList.add('vis');
-      document.body.style.userSelect='none';document.body.style.cursor='grabbing';
-    }
-    const gh=document.getElementById('bmGhost');
-    gh.style.left=(ev.clientX+13)+'px';gh.style.top=(ev.clientY+13)+'px';
-    // Highlight drop target under cursor
-    const elUnder=document.elementFromPoint(ev.clientX,ev.clientY);
-    const pi=elUnder?.closest('.panel-item[data-bm-drop]');
-    const bmCard=elUnder?.closest('.bm-card');
-    document.querySelectorAll('.drop-target-bm').forEach(el=>el.classList.remove('drop-target-bm'));
-    document.querySelectorAll('.bm-card.drag-over').forEach(el=>el.classList.remove('drag-over'));
-    if(pi)pi.classList.add('drop-target-bm');
-    else if(bmCard&&bmCard.dataset.id!==bmId)bmCard.classList.add('drag-over');
-  };
-  const onUp=ev=>{
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
-    if(!bmDragState)return;
-    bmDragState.card.classList.remove('dragging');
-    document.getElementById('bmGhost').classList.remove('vis');
-    document.body.style.userSelect='';document.body.style.cursor='';
-    document.querySelectorAll('.drop-target-bm').forEach(el=>el.classList.remove('drop-target-bm'));
-    document.querySelectorAll('.bm-card.drag-over').forEach(el=>el.classList.remove('drag-over'));
-    const elUnder=document.elementFromPoint(ev.clientX,ev.clientY);
-    const pi=elUnder?.closest('.panel-item[data-bm-drop]');
-    const bmCard=elUnder?.closest('.bm-card');
-    if(pi){
-      const[subId,ssId,secId]=pi.dataset.bmDrop.split(',');
-      moveBmToSection(bmDragState.bmId,subId||null,ssId||null,secId||null);
-    }else if(bmCard&&bmCard.dataset.id!==bmDragState.bmId){
-      reorderBm(bmDragState.bmId,bmCard.dataset.id);
-    }
-    dragItemId=null;bmDragState=null;
-  };
-  document.addEventListener('mousemove',onMove);
-  document.addEventListener('mouseup',onUp);
+  el.addEventListener('dragover',e=>{
+    if(!dragItemId)return;
+    e.preventDefault();e.dataTransfer.dropEffect='move';
+    el.classList.add('drop-target-bm');
+  });
+  el.addEventListener('dragleave',e=>{
+    if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
+  });
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('drop-target-bm');
+    if(!dragItemId)return;
+    moveBmToSection(dragItemId,subId,ssId,secId);
+    dragItemId=null;
+  });
 }
 function reorderFolder(type, fromId, toId){
   pushHist();
