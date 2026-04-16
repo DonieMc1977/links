@@ -2305,10 +2305,7 @@ function initKeyboard(){
       else if(e.key==='ArrowRight'){e.preventDefault();kbRight();}
       else if(e.key==='ArrowLeft'){
         e.preventDefault();
-        if(kbPanel===3&&selSec){selSec=null;render();kbSetPanel(2);}
-        else if(kbPanel===2&&selSS){selSS=null;selSec=null;render();kbSetPanel(1);}
-        else if(kbPanel===1&&selSub){selSub=null;selSS=null;selSec=null;render();kbSetPanel(0);}
-        else kbPanel=Math.max(0,kbPanel-1);
+        if(kbPanel>0){kbPanel--;kbSetPanel(kbPanel);}
       }
       else if(e.key==='Enter')kbSelect();
       else if(e.key==='Escape'){
