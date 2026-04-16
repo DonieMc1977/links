@@ -13,7 +13,6 @@
   --text:#c8d3f0;--dim:#6878a8;--bright:#e4ecff;
   --accent:#7c9ef8;--accent2:#5578d6;--aglow:rgba(124,158,248,.12);
   --green:#4fd1a0;--red:#f76e6e;--amber:#f59e0b;
-  --pri-high:rgba(247,110,110,.35);--pri-med:rgba(251,191,36,.3);--pri-low:rgba(124,158,248,.3);
   --r:6px;--font:'Segoe UI',system-ui,sans-serif;--mono:'Cascadia Code','Fira Code',monospace;
 }
 body.light{
@@ -142,9 +141,9 @@ header{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;backg
 .bm-card.drag-over{border-color:var(--accent);}
 .bm-card.flash{animation:flashCard 1.2s ease-out;}
 @keyframes flashCard{0%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:none;}}
-.bm-card.pri-high{border-left:3px solid rgba(247,110,110,.7);}
-.bm-card.pri-med{border-left:3px solid rgba(251,191,36,.7);}
-.bm-card.pri-low{border-left:3px solid rgba(124,158,248,.7);}
+.panel-item.drop-target-bm{background:var(--aglow);outline:2px solid var(--accent);outline-offset:-2px;}
+.notes-fmt-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;font-family:var(--font);min-width:24px;transition:all .1s;line-height:1.4;}
+.notes-fmt-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--bright);}
 .bm-main{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;}
 .bm-bar{width:3px;border-radius:2px;align-self:stretch;flex-shrink:0;min-height:18px;margin:-9px 4px -9px -11px;}
 .bm-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
@@ -153,11 +152,6 @@ header{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;backg
 .bm-title{font-weight:500;color:var(--bright);font-size:13px;line-height:1.3;}
 .bm-title.clickable{cursor:pointer;}
 .bm-title.clickable:hover{color:var(--accent);}
-.pri-badge{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:10px;flex-shrink:0;cursor:pointer;user-select:none;}
-.pri-badge:hover{filter:brightness(1.3);}
-.pri-badge.high{background:var(--pri-high);color:#fca5a5;}
-.pri-badge.med{background:var(--pri-med);color:#fcd34d;}
-.pri-badge.low{background:var(--pri-low);color:#93c5fd;}
 .bm-url{font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;}
 .bm-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
 .date-badge{font-size:10px;color:var(--dim);background:var(--bg4);padding:1px 6px;border-radius:10px;flex-shrink:0;}
@@ -217,12 +211,6 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
 .url-dd-item:hover{background:var(--bg3);}
 .url-dd-lbl{font-size:12.5px;color:var(--bright);}
 .url-dd-domain{font-size:11px;color:var(--dim);font-family:var(--mono);}
-
-/* ── PRI POPUP ── */
-.pri-popup{position:fixed;z-index:2100;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 6px 20px rgba(0,0,0,.4);padding:4px;min-width:110px;}
-.pri-popup-opt{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;}
-.pri-popup-opt:hover{background:var(--bg3);color:var(--bright);}
-.pri-popup-opt.cur{color:var(--accent);font-weight:600;}
 
 /* ── EMPTY / TOAST ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--dim);}
@@ -326,12 +314,9 @@ body.light .tag-pill.tt{background:rgba(2,132,199,.1)!important;border-color:rgb
 .proj-bm-row:last-child{border-bottom:none;}
 .proj-bm-title{font-size:12px;color:var(--bright);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .proj-bm-url{font-size:11px;color:var(--dim);font-family:var(--mono);}
-.proj-bm-pri{font-size:10px;padding:1px 5px;border-radius:8px;}
 .proj-task-row{display:flex;align-items:center;gap:6px;padding:3px 0 3px 16px;font-size:11px;color:var(--dim);}
 .proj-task-row.open-task{color:var(--text);}
 .proj-summary-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
-.proj-priority-list{margin-top:10px;}
-.proj-pri-item{display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg4);border-radius:4px;margin-bottom:4px;font-size:12px;}
 
 /* ── RECENT ── */
 .recent-panel{position:fixed;right:0;top:50px;bottom:0;width:240px;background:var(--bg2);border-left:1px solid var(--border);z-index:500;display:none;flex-direction:column;}
@@ -433,7 +418,6 @@ body.compact .panel-label{font-size:9px;}
     </div>
     <button class="btn btn-ghost" onclick="toggleRecent()" title="Recent">🕐</button>
     <button class="btn btn-ghost" onclick="openTagBrowser()" title="Tag Browser">🏷</button>
-    <button class="btn btn-ghost" onclick="openActionsOverlay()" title="Actions & Tasks" id="actionsBtn" style="position:relative;">⚡<span id="actionsBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:10px;padding:0 4px;font-size:9px;font-weight:700;min-width:14px;text-align:center;line-height:14px;"></span></button>
     <button class="btn btn-ghost" onclick="openLinksReport()" title="Links Report">📊</button>
     <button class="btn btn-primary" onclick="openBmModal(null)" style="padding:5px 12px;">＋ Add</button>
     <button class="btn btn-ghost" onclick="openBulkImport()" title="Bulk Import URLs">📥</button>
@@ -506,7 +490,29 @@ body.compact .panel-label{font-size:9px;}
   <div class="links-panel" id="linksPanel">
     <div class="links-header">
       <div class="breadcrumb" id="breadcrumb">Select a section to view bookmarks</div>
+      <button class="btn btn-ghost" id="notesToggleBtn" title="Section notes" onclick="toggleNotepad()" style="font-size:13px;padding:4px 8px;position:relative;display:none;">📝<span id="notesDot" style="display:none;position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--accent);"></span></button>
       <button class="btn" style="font-size:12px;padding:4px 10px;" id="addBmBtn" onclick="openBmModal(null)" disabled>+ Add</button>
+    </div>
+    <!-- SECTION NOTEPAD -->
+    <div id="notepadPanel" style="display:none;flex-direction:column;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:4px;padding:5px 8px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:600;color:var(--dim);letter-spacing:.5px;margin-right:4px;">📝 NOTES</span>
+        <button class="notes-fmt-btn" onclick="notesFmt('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button class="notes-fmt-btn" onclick="notesFmt('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button class="notes-fmt-btn" onclick="notesFmt('h1')" title="Heading 1" style="font-size:10px;">H1</button>
+        <button class="notes-fmt-btn" onclick="notesFmt('h2')" title="Heading 2" style="font-size:10px;">H2</button>
+        <button class="notes-fmt-btn" onclick="notesFmt('h3')" title="Heading 3" style="font-size:10px;">H3</button>
+        <button class="notes-fmt-btn" onclick="notesFmt('bullet')" title="Bullet list">• —</button>
+        <button class="notes-fmt-btn" onclick="notesFmt('numbered')" title="Numbered list">1.</button>
+        <button class="notes-fmt-btn" onclick="notesFmt('code')" title="Inline code"><code style="font-size:10px;">{ }</code></button>
+        <button class="notes-fmt-btn" onclick="notesFmt('hr')" title="Divider">—</button>
+        <div style="flex:1;"></div>
+        <button id="notesModeBtn" class="btn btn-ghost" onclick="toggleNotesMode()" style="font-size:11px;padding:2px 7px;">Preview</button>
+        <button id="notesPinBtn" class="btn btn-ghost" onclick="toggleNotesPin()" title="Pin open" style="font-size:11px;padding:2px 7px;">📌 Pin</button>
+        <button class="btn btn-ghost" onclick="toggleNotepad()" style="font-size:11px;padding:2px 6px;">✕</button>
+      </div>
+      <textarea id="notesEditor" placeholder="Write notes here... Use toolbar above or markdown: **bold**, *italic*, # Heading, - bullet" style="width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--bright);font-family:var(--mono);font-size:12px;line-height:1.6;padding:10px 12px;resize:vertical;min-height:100px;max-height:300px;outline:none;" oninput="onNotesInput()" onkeydown="onNotesKeydown(event)"></textarea>
+      <div id="notesPreview" style="display:none;padding:10px 14px;font-size:13px;line-height:1.7;color:var(--bright);max-height:300px;overflow-y:auto;"></div>
     </div>
     <div class="filter-bar">
       <button class="fb active" data-fil="all" onclick="setFilter('all')">All</button>
@@ -517,7 +523,6 @@ body.compact .panel-label{font-size:9px;}
         <option value="az">A→Z</option>
         <option value="za">Z→A</option>
         <option value="date">📅 Date</option>
-        <option value="priority">🎯 Priority</option>
       </select>
     </div>
     <div class="tag-filter-bar" id="tagFilterBar"><span class="tf-label">Tags:</span></div>
@@ -542,14 +547,6 @@ body.compact .panel-label{font-size:9px;}
   <div class="ctx-div"></div>
   <div class="ctx-item" id="ctx-edit">✏️ Edit</div>
   <div class="ctx-item" id="ctx-move">➡️ Move to…</div>
-  <div class="ctx-div" id="ctx-pri-div"></div>
-  <div class="ctx-item" id="ctx-pri-toggle">🎯 Priority ▸</div>
-  <div id="ctx-pri-sub" style="display:none;padding-left:14px;">
-    <div class="ctx-item" data-pri="">○ None</div>
-    <div class="ctx-item" data-pri="high">🔴 High</div>
-    <div class="ctx-item" data-pri="med">🟡 Medium</div>
-    <div class="ctx-item" data-pri="low">🔵 Low</div>
-  </div>
   <div class="ctx-div"></div>
   <div class="ctx-item" id="ctx-archive">📦 Archive</div>
   <div class="ctx-item" id="ctx-restore" style="display:none;">🔄 Restore</div>
@@ -770,34 +767,6 @@ body.compact .panel-label{font-size:9px;}
   </div>
 </div>
 
-<!-- ACTIONS OVERLAY -->
-<div class="overlay" id="actionsOverlay">
-  <div class="ov-hdr">
-    <button class="ov-close" onclick="closeActionsOverlay()">✕</button>
-    <span class="ov-title">⚡ Actions & Tasks</span>
-    <span id="aoStats" style="font-size:11px;color:var(--dim);margin-left:8px;"></span>
-    <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-left:auto;" onclick="resetAO()">⟳ Reset</button>
-  </div>
-  <div class="ov-controls">
-    <button class="ov-tab active" data-ao-status="open" onclick="setAOStatus('open')">📋 Open</button>
-    <button class="ov-tab" data-ao-status="archived" onclick="setAOStatus('archived')">📦 Archived</button>
-    <div class="ov-sep"></div>
-    <button class="ov-tab active" data-ao-pri="all" onclick="toggleAOPri('all')">All</button>
-    <button class="ov-tab" data-ao-pri="high" onclick="toggleAOPri('high')">🔴 High</button>
-    <button class="ov-tab" data-ao-pri="med" onclick="toggleAOPri('med')">🟡 Med</button>
-    <button class="ov-tab" data-ao-pri="low" onclick="toggleAOPri('low')">🔵 Low</button>
-    <div class="ov-sep"></div>
-    <select class="ov-sort" id="aoSort" onchange="renderAO()">
-      <option value="priority">Sort: Priority</option>
-      <option value="subject">Group: Subject</option>
-      <option value="date">Sort: Date ↓</option>
-      <option value="az">Sort: A→Z</option>
-    </select>
-    <input class="ov-search" id="aoSearch" placeholder="Search…" oninput="renderAO()">
-  </div>
-  <div class="ov-body" id="aoBody"></div>
-</div>
-
 <!-- LINKS REPORT OVERLAY -->
 <div class="overlay" id="linksReportOverlay">
   <div class="ov-hdr">
@@ -860,13 +829,15 @@ let lrSrc = 'all';
 let panelSorts = { subject: 'custom', subsub: 'custom', section: 'custom' };
 let dragItemId = null;
 let dragFolderInfo = null;
-let priPopupEl = null;
 let activeDd = null;
 let fmMode = '', fmEditId = null;
 let mvItemId = null;
 let confirmCb = null;
 let hist = [];
 let hIdx = -1;
+let notesMode = 'edit';
+let notesPinned = localStorage.getItem('lo-notes-pinned') === '1';
+let notesTimer = null;
 
 // ════════════════════════════════════════════════════════
 // UTILS
@@ -1200,6 +1171,7 @@ function migrateData(d){
       }
       ss.sections.forEach(sec=>{
         if(!sec.bookmarks) sec.bookmarks=[];
+        if(sec.notes===undefined) sec.notes='';
         sec.bookmarks.forEach(b=>{
           if(!b.urls) b.urls=[];
           if(!b.tags) b.tags=[];
@@ -1231,10 +1203,10 @@ function render(){
   renderBookmarks();
   renderTagFilterBar();
   renderBreadcrumb();
+  updNotesForNav();
   document.getElementById('addSubSubBtn').disabled=!selSub;
   document.getElementById('addSecBtn').disabled=!selSS;
   document.getElementById('addBmBtn').disabled=!selSec;
-  updateActionsBadge();
 }
 function renderSubjects(){
   const list=document.getElementById('listSubject');
@@ -1301,6 +1273,7 @@ function renderSections(){
     el.addEventListener('dblclick',e=>{e.stopPropagation();openFM('section',sec.id);});
     attachFolderDrag(el,'section',sec.id,sec.title);
     attachFolderDrop(el,'section',sec.id);
+    attachBmDrop(el,selSub,selSS,sec.id);
     list.appendChild(el);
   });
 }
@@ -1320,7 +1293,6 @@ function renderBookmarks(){
   if(linkSort==='az') items.sort((a,b)=>a.title.localeCompare(b.title));
   else if(linkSort==='za') items.sort((a,b)=>b.title.localeCompare(a.title));
   else if(linkSort==='date') items.sort((a,b)=>{ const da=a.itemDate||'',db=b.itemDate||''; if(!da&&!db)return 0; if(!da)return 1; if(!db)return-1; return db.localeCompare(da); });
-  else if(linkSort==='priority'){ const priOrder={high:0,med:1,low:2};items.sort((a,b)=>{const pa=a.priority?priOrder[a.priority]??3:3;const pb=b.priority?priOrder[b.priority]??3:3;return pa!==pb?pa-pb:(a.order||0)-(b.order||0);}); }
   else items.sort((a,b)=>(a.order||0)-(b.order||0));
   if(!items.length){
     const msg=itemFilter==='tasks'?'No bookmarks with open tasks in this section.':itemFilter==='archived'?'No archived bookmarks.':'No bookmarks in this section yet.';
@@ -1331,7 +1303,7 @@ function renderBookmarks(){
 }
 function buildCard(bm){
   const card=document.createElement('div');
-  card.className='bm-card'+(bm.priority?' pri-'+bm.priority:'');
+  card.className='bm-card';
   card.dataset.id=bm.id;
   const primaryUrl=bm.urls&&bm.urls[0];
   const icon=getIcon(primaryUrl?.url||'');
@@ -1340,7 +1312,6 @@ function buildCard(bm){
   const doneCount=(bm.checklist||[]).filter(c=>c.checked).length;
   const totalCount=(bm.checklist||[]).length;
   const allDone=hasCl&&doneCount===totalCount;
-  const priH=bm.priority?`<span class="pri-badge ${bm.priority}" onclick="event.stopPropagation();showPriPopup(event,'${bm.id}')">${{high:'🔴 HIGH',med:'🟡 MED',low:'🔵 LOW'}[bm.priority]}</span>`:'';
   const dateH=bm.itemDate?`<span class="date-badge">${formatDate(bm.itemDate)}</span>`:'';
   const urlsH=bm.urls&&bm.urls.length>1?`<div class="bm-url">📎 ${bm.urls.length} URLs</div>`:(primaryUrl?`<div class="bm-url">${esc(getDomain(primaryUrl.url))}</div>`:'');
   const tagsH=(bm.tags||[]).length?`<div class="bm-tags">${(bm.tags||[]).map(t=>tagHTML(t)).join('')}</div>`:'';
@@ -1356,7 +1327,7 @@ function buildCard(bm){
       <div class="bm-body">
         <div class="bm-title-row">
           <span class="bm-title clickable" onclick="handleOpen('${bm.id}')">${esc(bm.title)}</span>
-          ${priH}${dateH}
+          ${dateH}
         </div>
         ${urlsH}
         ${inlineTagInput}
@@ -1663,33 +1634,6 @@ function navigateInternal(url){
 }
 
 // ════════════════════════════════════════════════════════
-// PRIORITY POPUP
-// ════════════════════════════════════════════════════════
-function showPriPopup(e, bmId){
-  closePriPopup();
-  const f=findBm(bmId);if(!f)return;
-  const cur=f.bm.priority||'';
-  const pop=document.createElement('div');
-  pop.className='pri-popup';
-  [['','○ None'],['high','🔴 High'],['med','🟡 Medium'],['low','🔵 Low']].forEach(([val,lbl])=>{
-    const d=document.createElement('div');
-    d.className='pri-popup-opt'+(cur===val?' cur':'');
-    d.textContent=lbl;
-    d.addEventListener('mousedown',ev=>{ ev.preventDefault();ev.stopPropagation(); pushHist(); f.bm.priority=val||undefined; save(); closePriPopup(); renderBookmarks(); });
-    pop.appendChild(d);
-  });
-  document.body.appendChild(pop);
-  priPopupEl=pop;
-  const r=e.target.getBoundingClientRect();
-  let top=r.bottom+4,left=r.left;
-  if(left+120>window.innerWidth)left=window.innerWidth-124;
-  if(top+150>window.innerHeight)top=r.top-154;
-  pop.style.top=top+'px';pop.style.left=left+'px';
-  setTimeout(()=>document.addEventListener('click',closePriPopup,{once:true}),0);
-}
-function closePriPopup(){ if(priPopupEl){priPopupEl.remove();priPopupEl=null;} document.removeEventListener('click',closePriPopup); }
-
-// ════════════════════════════════════════════════════════
 // HOVER TOOLTIP
 // ════════════════════════════════════════════════════════
 let ttTimer=null;
@@ -1705,7 +1649,6 @@ function showBmTooltip(e,bmId){
     let html=`<div class="tt-title">${esc(bm.title)}</div>`;
     if(domain)html+=`<div class="tt-row">${getIcon(primaryUrl.url)} <b>${esc(domain)}</b></div>`;
     if(urlCount>1)html+=`<div class="tt-row">📎 ${urlCount} URLs</div>`;
-    if(bm.priority){const priLbl={high:'🔴 High',med:'🟡 Medium',low:'🔵 Low'}[bm.priority];html+=`<div class="tt-row">Priority: <b>${priLbl}</b></div>`;}
     if(bm.dateAdded)html+=`<div class="tt-row">Added: ${bm.dateAdded}</div>`;
     if(bm.lastOpened)html+=`<div class="tt-row">Last opened: ${bm.lastOpened}</div>`;
     if(bm.itemDate)html+=`<div class="tt-row">Date: ${formatDate(bm.itemDate)}</div>`;
@@ -1830,15 +1773,41 @@ function deleteBm(id){
   openModal('confirmModal');
 }
 function reorderBm(fromId, toId){
-  const sec=getSec(selSub,selSS,selSec);if(!sec)return;
+  const d=findBm(fromId),t=findBm(toId);
+  if(!d||!t)return;
   pushHist();
-  const fromIdx=sec.bookmarks.findIndex(b=>b.id===fromId);
-  const toIdx=sec.bookmarks.findIndex(b=>b.id===toId);
-  if(fromIdx<0||toIdx<0)return;
-  const [item]=sec.bookmarks.splice(fromIdx,1);
-  sec.bookmarks.splice(toIdx,0,item);
-  sec.bookmarks.forEach((b,i)=>b.order=i);
+  if(d.sec===t.sec){
+    const arr=d.sec.bookmarks;
+    const di=arr.indexOf(d.bm),ti=arr.indexOf(t.bm);
+    arr.splice(di,1);arr.splice(ti,0,d.bm);
+    arr.forEach((b,i)=>b.order=i);
+  }else{
+    d.sec.bookmarks=d.sec.bookmarks.filter(b=>b.id!==fromId);
+    d.sec.bookmarks.forEach((b,i)=>b.order=i);
+    const ti=t.sec.bookmarks.indexOf(t.bm);
+    t.sec.bookmarks.splice(ti,0,d.bm);
+    t.sec.bookmarks.forEach((b,i)=>b.order=i);
+    selSub=t.sub.id;selSS=t.ss.id;selSec=t.sec.id;
+  }
   save();render();
+}
+function moveBmToSection(bmId, targetSubId, targetSSId, targetSecId){
+  const source=findBm(bmId);if(!source)return;
+  const targetSec=getSec(targetSubId,targetSSId,targetSecId);
+  if(!targetSec||source.sec===targetSec)return;
+  pushHist();
+  source.sec.bookmarks=source.sec.bookmarks.filter(b=>b.id!==bmId);
+  source.sec.bookmarks.forEach((b,i)=>b.order=i);
+  source.bm.order=targetSec.bookmarks.length;
+  targetSec.bookmarks.push(source.bm);
+  save();
+  selSub=targetSubId;selSS=targetSSId;selSec=targetSecId;
+  render();
+  toast('Moved to '+targetSec.title);
+  setTimeout(()=>{
+    const card=document.querySelector('.bm-card[data-id="'+bmId+'"]');
+    if(card){card.scrollIntoView({block:'nearest'});card.classList.add('flash');setTimeout(()=>card.classList.remove('flash'),1400);}
+  },80);
 }
 function copyUrl(id){
   const f=findBm(id);if(!f||!f.bm.urls||!f.bm.urls[0])return;
@@ -2007,6 +1976,22 @@ function attachFolderDrop(el, type, id){
     dragFolderInfo=null;
   });
 }
+function attachBmDrop(el, subId, ssId, secId){
+  el.addEventListener('dragover',e=>{
+    if(!dragItemId)return;
+    e.preventDefault();e.dataTransfer.dropEffect='move';
+    el.classList.add('drop-target-bm');
+  });
+  el.addEventListener('dragleave',e=>{
+    if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
+  });
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('drop-target-bm');
+    if(!dragItemId)return;
+    moveBmToSection(dragItemId,subId,ssId,secId);
+    dragItemId=null;
+  });
+}
 function reorderFolder(type, fromId, toId){
   pushHist();
   let arr=null;
@@ -2072,13 +2057,6 @@ function showCtx(e, id){
       urlsSub.appendChild(item);
     });
   } else urlsSub.style.display='none';
-  // Priority submenu — highlight current
-  const curPri=f.bm.priority||'';
-  document.querySelectorAll('#ctx-pri-sub [data-pri]').forEach(el=>{
-    el.style.fontWeight=el.dataset.pri===curPri?'700':'400';
-    el.style.color=el.dataset.pri===curPri?'var(--accent)':'';
-  });
-  document.getElementById('ctx-pri-sub').style.display='none';
   ctxMenu.style.left=e.clientX+'px';ctxMenu.style.top=e.clientY+'px';ctxMenu.classList.add('vis');
   const r=ctxMenu.getBoundingClientRect();
   if(r.right>innerWidth)ctxMenu.style.left=(e.clientX-r.width)+'px';
@@ -2092,13 +2070,6 @@ document.getElementById('ctx-move').addEventListener('click',()=>{openMoveModal(
 document.getElementById('ctx-archive').addEventListener('click',()=>{archiveBm(ctxId);hideCtx();});
 document.getElementById('ctx-restore').addEventListener('click',()=>{archiveBm(ctxId);hideCtx();});
 document.getElementById('ctx-delete').addEventListener('click',()=>{deleteBm(ctxId);hideCtx();});
-document.getElementById('ctx-pri-toggle').addEventListener('click',e=>{e.stopPropagation();document.getElementById('ctx-pri-sub').style.display=document.getElementById('ctx-pri-sub').style.display==='none'?'block':'none';});
-document.querySelectorAll('#ctx-pri-sub [data-pri]').forEach(el=>{
-  el.addEventListener('click',()=>{
-    if(!ctxId)return;const f=findBm(ctxId);if(!f)return;
-    pushHist();f.bm.priority=el.dataset.pri||undefined;save();renderBookmarks();hideCtx();
-  });
-});
 document.addEventListener('click',()=>hideCtx());
 
 // ════════════════════════════════════════════════════════
@@ -2123,6 +2094,195 @@ function toggleScope(lvl){
   sInp.focus();
   if(sInp.value.trim())sInp.dispatchEvent(new Event('input'));
   document.getElementById('searchScopeBar').style.display='flex';
+}
+
+// ════════════════════════════════════════════════════════
+// SECTION NOTES
+// ════════════════════════════════════════════════════════
+function notesFmt(type){
+  const ta=document.getElementById('notesEditor');
+  if(!ta)return;
+  const start=ta.selectionStart,end=ta.selectionEnd;
+  const sel=ta.value.slice(start,end);
+  const before=ta.value.slice(0,start);
+  const after=ta.value.slice(end);
+  let insert='',curStart=start,curEnd=end;
+  if(type==='bold'){
+    insert=sel?'**'+sel+'**':'**bold**';
+    curStart=sel?start:start+2;curEnd=sel?start+insert.length:start+6;
+  }else if(type==='italic'){
+    insert=sel?'*'+sel+'*':'*italic*';
+    curStart=sel?start:start+1;curEnd=sel?start+insert.length:start+7;
+  }else if(type==='code'){
+    insert=sel?'`'+sel+'`':'`code`';
+    curStart=sel?start:start+1;curEnd=sel?start+insert.length:start+5;
+  }else if(type==='hr'){
+    const nl=before.length&&!before.endsWith('\n')?'\n':'';
+    insert=nl+'---\n';curStart=curEnd=start+insert.length;
+  }else if(type==='bullet'||type==='numbered'){
+    const lines=sel?sel.split('\n'):[''];
+    insert=lines.map((l,i)=>l?(type==='bullet'?'- ':(i+1)+'. ')+l:l).join('\n');
+    if(!sel)insert=(type==='bullet'?'- ':'1. ');
+    curStart=start;curEnd=start+insert.length;
+  }else if(type==='h1'||type==='h2'||type==='h3'){
+    const pfx=type==='h1'?'# ':type==='h2'?'## ':'### ';
+    const lineStart=before.lastIndexOf('\n')+1;
+    const rest=ta.value.slice(lineStart);
+    const lineEnd=rest.indexOf('\n');
+    const line=lineEnd===-1?rest:rest.slice(0,lineEnd);
+    const stripped=line.replace(/^#{1,3} /,'');
+    ta.value=ta.value.slice(0,lineStart)+pfx+stripped+(lineEnd===-1?'':rest.slice(lineEnd));
+    ta.selectionStart=ta.selectionEnd=lineStart+pfx.length+stripped.length;
+    onNotesInput();ta.focus();return;
+  }
+  ta.value=before+insert+after;
+  ta.selectionStart=curStart;ta.selectionEnd=curEnd;
+  ta.focus();onNotesInput();
+}
+function onNotesKeydown(e){
+  if(e.ctrlKey&&e.key==='b'){e.preventDefault();notesFmt('bold');return;}
+  if(e.ctrlKey&&e.key==='i'){e.preventDefault();notesFmt('italic');return;}
+  if(e.key==='Escape'){e.preventDefault();toggleNotepad();return;}
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const ta=e.target,s=ta.selectionStart;
+    ta.value=ta.value.slice(0,s)+'  '+ta.value.slice(ta.selectionEnd);
+    ta.selectionStart=ta.selectionEnd=s+2;
+    onNotesInput();return;
+  }
+  if(e.key==='Enter'){
+    const ta=e.target,pos=ta.selectionStart;
+    const lineStart=ta.value.lastIndexOf('\n',pos-1)+1;
+    const line=ta.value.slice(lineStart,pos);
+    const bm=line.match(/^([-*] )/);
+    const nm=line.match(/^(\d+)\. /);
+    if(bm&&line.trim()!==bm[1].trim()){
+      e.preventDefault();
+      const s=ta.selectionStart;
+      ta.value=ta.value.slice(0,s)+'\n'+bm[1]+ta.value.slice(s);
+      ta.selectionStart=ta.selectionEnd=s+1+bm[1].length;
+      onNotesInput();
+    }else if(nm&&line.trim()!==nm[0].trim()){
+      e.preventDefault();
+      const next='\n'+(parseInt(nm[1])+1)+'. ';
+      const s=ta.selectionStart;
+      ta.value=ta.value.slice(0,s)+next+ta.value.slice(s);
+      ta.selectionStart=ta.selectionEnd=s+next.length;
+      onNotesInput();
+    }
+  }
+}
+function openNotepad(){
+  if(!selSec)return;
+  const panel=document.getElementById('notepadPanel');
+  panel.style.display='flex';
+  loadNotesForSection();
+  updNotesPinBtn();
+}
+function closeNotepad(){
+  if(notesPinned)return;
+  document.getElementById('notepadPanel').style.display='none';
+}
+function toggleNotepad(){
+  const panel=document.getElementById('notepadPanel');
+  if(panel.style.display==='none'||panel.style.display===''){
+    openNotepad();
+  }else{
+    notesPinned=false;localStorage.setItem('lo-notes-pinned','0');
+    panel.style.display='none';
+    updNotesPinBtn();
+  }
+}
+function toggleNotesPin(){
+  notesPinned=!notesPinned;
+  localStorage.setItem('lo-notes-pinned',notesPinned?'1':'0');
+  updNotesPinBtn();
+}
+function updNotesPinBtn(){
+  const btn=document.getElementById('notesPinBtn');
+  if(!btn)return;
+  btn.style.background=notesPinned?'var(--accent)':'';
+  btn.style.color=notesPinned?'#fff':'';
+  btn.textContent=notesPinned?'📌 Pinned':'📌 Pin';
+}
+function loadNotesForSection(){
+  if(!selSec)return;
+  const sec=getSec(selSub,selSS,selSec);
+  const text=sec?.notes||'';
+  const editor=document.getElementById('notesEditor');
+  if(editor)editor.value=text;
+  if(notesMode==='preview')renderNotesPreview(text);
+  updNotesDot();
+}
+function updNotesDot(){
+  const sec=getSec(selSub,selSS,selSec);
+  const hasNotes=sec&&(sec.notes||'').trim().length>0;
+  const dot=document.getElementById('notesDot');
+  if(dot)dot.style.display=hasNotes?'block':'none';
+}
+function onNotesInput(){
+  const text=document.getElementById('notesEditor').value;
+  clearTimeout(notesTimer);
+  notesTimer=setTimeout(()=>saveNotes(text),600);
+}
+function saveNotes(text){
+  const sec=getSec(selSub,selSS,selSec);
+  if(!sec)return;
+  sec.notes=text;
+  save();
+  updNotesDot();
+}
+function toggleNotesMode(){
+  const editor=document.getElementById('notesEditor');
+  const preview=document.getElementById('notesPreview');
+  const btn=document.getElementById('notesModeBtn');
+  if(notesMode==='edit'){
+    notesMode='preview';
+    const text=editor.value;
+    saveNotes(text);
+    renderNotesPreview(text);
+    editor.style.display='none';preview.style.display='block';
+    btn.textContent='Edit';
+  }else{
+    notesMode='edit';
+    editor.style.display='block';preview.style.display='none';
+    btn.textContent='Preview';
+    editor.focus();
+  }
+}
+function renderNotesPreview(md){
+  const preview=document.getElementById('notesPreview');
+  if(!preview)return;
+  let html=md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<h4 style="margin:.3em 0;font-size:13px;color:var(--bright);">$1</h4>')
+    .replace(/^## (.+)$/gm,'<h3 style="margin:.4em 0;font-size:14px;color:var(--bright);">$1</h3>')
+    .replace(/^# (.+)$/gm,'<h2 style="margin:.5em 0;font-size:15px;color:var(--bright);">$1</h2>')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/_(.+?)_/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg3);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:11px;">$1</code>')
+    .replace(/^[-*] (.+)$/gm,'<li style="margin:.15em 0;">$1</li>')
+    .replace(/(<li.*<\/li>)/gs,'<ul style="margin:.3em 0;padding-left:18px;">$1</ul>')
+    .replace(/^\d+\. (.+)$/gm,'<li style="margin:.15em 0;">$1</li>')
+    .replace(/^---$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:.5em 0;">')
+    .replace(/\n/g,'<br>');
+  preview.innerHTML=html;
+}
+function updNotesForNav(){
+  const btn=document.getElementById('notesToggleBtn');
+  if(!btn)return;
+  btn.style.display=selSec?'':'none';
+  if(selSec){
+    loadNotesForSection();
+    const panel=document.getElementById('notepadPanel');
+    if(notesPinned){
+      panel.style.display='flex';
+    }
+  }else{
+    document.getElementById('notepadPanel').style.display='none';
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -2442,13 +2602,11 @@ function openProjView(subId, ssId){
   // Count totals
   let totalBms=0,totalTasks=0,doneTasks=0;
   const allTags=new Set();
-  const highPri=[];
   ss.sections.forEach(sec=>{
     sec.bookmarks.filter(b=>b.status!=='archived').forEach(b=>{
       totalBms++;
       (b.tags||[]).forEach(t=>allTags.add(t));
       (b.checklist||[]).forEach(c=>{totalTasks++;if(c.checked)doneTasks++;});
-      if(b.priority==='high')highPri.push({title:b.title,section:sec.title,id:b.id,subId,ssId,secId:sec.id});
     });
   });
   document.getElementById('projMeta').textContent=`${sub.title} › ${ss.title} · ${totalBms} bookmarks · ${totalTasks} tasks`;
@@ -2480,10 +2638,9 @@ function openProjView(subId, ssId){
     ${secTasks>0?`<div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${secPct}%;"></div></div>`:''}`;
     const itemsDiv=document.createElement('div');itemsDiv.className='proj-sec-items';
     bms.forEach(bm=>{
-      const priH=bm.priority?`<span class="proj-bm-pri pri-badge ${bm.priority}">${{high:'🔴',med:'🟡',low:'🔵'}[bm.priority]}</span>`:'';
       const openTasks=(bm.checklist||[]).filter(c=>!c.checked);
       const row=document.createElement('div');row.className='proj-bm-row';
-      row.innerHTML=`${priH}<span class="proj-bm-title" title="${esc(bm.title)}">${esc(bm.title)}</span>
+      row.innerHTML=`<span class="proj-bm-title" title="${esc(bm.title)}">${esc(bm.title)}</span>
         <span class="proj-bm-url">${esc(getDomain(bm.urls?.[0]?.url||''))}</span>
         ${(bm.checklist||[]).length?`<span style="font-size:11px;color:var(--dim);">${(bm.checklist||[]).filter(c=>c.checked).length}/${(bm.checklist||[]).length} ✓</span>`:''}`;
       itemsDiv.appendChild(row);
@@ -2496,19 +2653,6 @@ function openProjView(subId, ssId){
     if(!bms.length)itemsDiv.innerHTML='<div style="font-size:12px;color:var(--dim);padding:6px 0;">No bookmarks in this section</div>';
     card.appendChild(itemsDiv);body.appendChild(card);
   });
-  // High priority summary
-  if(highPri.length){
-    const priCard=document.createElement('div');priCard.className='proj-section-card';
-    priCard.innerHTML=`<div class="proj-sec-hdr"><span class="proj-sec-name">🔴 High Priority Bookmarks</span></div>`;
-    const pDiv=document.createElement('div');pDiv.className='proj-sec-items';
-    highPri.forEach(h=>{
-      const r=document.createElement('div');r.className='proj-bm-row';r.style.cursor='pointer';
-      r.innerHTML=`<span class="pri-badge high">🔴 HIGH</span><span class="proj-bm-title">${esc(h.title)}</span><span class="proj-bm-url">${esc(h.section)}</span>`;
-      r.addEventListener('click',()=>{ selSub=h.subId;selSS=h.ssId;selSec=h.secId;render();closeProjView();setTimeout(()=>{const card=document.querySelector('.bm-card[data-id="'+h.id+'"]');if(card){card.scrollIntoView({block:'nearest'});card.classList.add('flash');setTimeout(()=>card.classList.remove('flash'),1400);}},80); });
-      pDiv.appendChild(r);
-    });
-    priCard.appendChild(pDiv);body.appendChild(priCard);
-  }
   // Tags
   if(allTags.size){
     const tagCard=document.createElement('div');tagCard.className='proj-section-card';
@@ -2664,122 +2808,6 @@ function exportLinksHTML(){
   toast('Exported successfully');
 }
 
-// ════════════════════════════════════════════════════════
-// ACTIONS OVERLAY
-// ════════════════════════════════════════════════════════
-let aoStatus='open',aoPri='all';
-function openActionsOverlay(){ document.getElementById('actionsOverlay').classList.add('vis'); renderAO(); }
-function closeActionsOverlay(){ document.getElementById('actionsOverlay').classList.remove('vis'); }
-function resetAO(){ aoStatus='open';aoPri='all';document.getElementById('aoSearch').value='';document.getElementById('aoSort').value='priority';document.querySelectorAll('[data-ao-status]').forEach(b=>b.classList.toggle('active',b.dataset.aoStatus==='open'));document.querySelectorAll('[data-ao-pri]').forEach(b=>b.classList.toggle('active',b.dataset.aoPri==='all'));renderAO(); }
-function setAOStatus(s){ aoStatus=s;document.querySelectorAll('[data-ao-status]').forEach(b=>b.classList.toggle('active',b.dataset.aoStatus===s));renderAO(); }
-function toggleAOPri(p){ aoPri=p;document.querySelectorAll('[data-ao-pri]').forEach(b=>b.classList.toggle('active',b.dataset.aoPri===p));renderAO(); }
-function getActionItems(){
-  const items=[];
-  D.subjects.forEach(sub=>sub.subSubjects.forEach(ss=>ss.sections.forEach(sec=>
-    sec.bookmarks.forEach(bm=>{
-      const hasTasks=(bm.checklist||[]).length>0;
-      const hasPri=!!bm.priority;
-      if(hasTasks||hasPri) items.push({bm,sec,ss,sub});
-    })
-  )));
-  return items;
-}
-function renderAO(){
-  const body=document.getElementById('aoBody');body.innerHTML='';
-  const q=document.getElementById('aoSearch').value.trim().toLowerCase();
-  const sort=document.getElementById('aoSort').value;
-  let items=getActionItems();
-  // Filter by status
-  items=items.filter(f=>aoStatus==='archived'?f.bm.status==='archived':f.bm.status!=='archived');
-  // Filter by priority
-  if(aoPri!=='all')items=items.filter(f=>(f.bm.priority||'')===(aoPri==='all'?f.bm.priority||'':aoPri));
-  // Filter by search
-  if(q)items=items.filter(f=>f.bm.title.toLowerCase().includes(q)||(f.bm.tags||[]).some(t=>t.toLowerCase().includes(q)));
-  // Stats
-  const totalTasks=items.reduce((a,f)=>a+(f.bm.checklist||[]).length,0);
-  const doneTasks=items.reduce((a,f)=>a+(f.bm.checklist||[]).filter(c=>c.checked).length,0);
-  document.getElementById('aoStats').textContent=`${items.length} items · ${doneTasks}/${totalTasks} tasks done`;
-  if(!items.length){body.innerHTML='<div class="ov-empty">No action items match current filters.</div>';return;}
-  // Sort
-  const priOrder={high:0,med:1,low:2};
-  if(sort==='priority')items.sort((a,b)=>{const pa=a.bm.priority?priOrder[a.bm.priority]??3:3;const pb=b.bm.priority?priOrder[b.bm.priority]??3:3;return pa!==pb?pa-pb:a.bm.title.localeCompare(b.bm.title);});
-  else if(sort==='az')items.sort((a,b)=>a.bm.title.localeCompare(b.bm.title));
-  else if(sort==='date')items.sort((a,b)=>{const da=a.bm.dateAdded||'',db=b.bm.dateAdded||'';if(!da&&!db)return 0;if(!da)return 1;if(!db)return-1;return db.localeCompare(da);});
-  // Render
-  if(sort==='subject'){
-    const grps={};
-    items.forEach(f=>{const k=f.sub.title;if(!grps[k])grps[k]={label:'📂 '+f.sub.title,items:[]};grps[k].items.push(f);});
-    Object.values(grps).forEach(g=>{
-      const hdr=document.createElement('div');hdr.className='ov-group-hdr';hdr.textContent=g.label;body.appendChild(hdr);
-      g.items.forEach(f=>body.appendChild(buildAORow(f)));
-    });
-  } else {
-    items.forEach(f=>body.appendChild(buildAORow(f)));
-  }
-}
-function buildAORow(f){
-  const bm=f.bm;
-  const el=document.createElement('div');el.className='ov-row';el.style.flexDirection='column';el.style.gap='6px';
-  const priH=bm.priority?`<span class="pri-badge ${bm.priority}" style="cursor:pointer;" onclick="event.stopPropagation();showPriPopup(event,'${bm.id}')">${{high:'🔴 HIGH',med:'🟡 MED',low:'🔵 LOW'}[bm.priority]}</span>`:'';
-  const openTasks=(bm.checklist||[]).filter(c=>!c.checked);
-  const doneTasks=(bm.checklist||[]).filter(c=>c.checked);
-  const totalTasks=(bm.checklist||[]).length;
-  const progressH=totalTasks?`<span style="font-size:10px;color:${openTasks.length===0?'var(--green)':'var(--dim)'};background:var(--bg4);padding:1px 6px;border-radius:10px;">${doneTasks.length}/${totalTasks}${openTasks.length===0?' ✓':''}</span>`:'';
-  // Top row
-  let topHtml=`<div style="display:flex;align-items:flex-start;gap:9px;width:100%;">
-    <div class="ov-icon">${getIcon(bm.urls?.[0]?.url||'')}</div>
-    <div class="ov-info" style="flex:1;min-width:0;">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span class="ov-item-title" onclick="selSub='${f.sub.id}';selSS='${f.ss.id}';selSec='${f.sec.id}';render();closeActionsOverlay();setTimeout(()=>{const c=document.querySelector('.bm-card[data-id=\\'${bm.id}\\']');if(c){c.scrollIntoView({block:'nearest'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1400);}},80);">${esc(bm.title)}</span>
-        ${priH}${progressH}
-      </div>
-      <div class="ov-item-bc">${esc(f.sub.title)} › ${esc(f.ss.title)} › ${esc(f.sec.title)}</div>
-      ${(bm.tags||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;">${bm.tags.map(t=>tagHTML(t)).join('')}</div>`:''}
-    </div>
-    <div style="display:flex;gap:4px;flex-shrink:0;">
-      <button class="lab" onclick="event.stopPropagation();openBmModal('${bm.id}');closeActionsOverlay();">Edit</button>
-      <button class="lab" onclick="event.stopPropagation();archiveBm('${bm.id}');renderAO();">${bm.status==='archived'?'Restore':'Archive'}</button>
-    </div>
-  </div>`;
-  el.innerHTML=topHtml;
-  // Checklist items (inline toggleable)
-  if(totalTasks){
-    const clDiv=document.createElement('div');clDiv.style.cssText='padding-left:36px;';
-    openTasks.forEach(c=>{
-      const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:6px;padding:2px 0;';
-      row.innerHTML=`<input type="checkbox" style="cursor:pointer;accent-color:var(--accent);margin-top:2px;" onchange="toggleClItem('${bm.id}','${c.id}',this.checked);renderAO();">
-        <span style="font-size:12px;color:var(--text);">${esc(c.text)}</span>`;
-      clDiv.appendChild(row);
-    });
-    if(doneTasks.length){
-      const showDone=document.createElement('div');showDone.style.cssText='font-size:11px;color:var(--dim);cursor:pointer;padding:2px 0;';
-      showDone.textContent=`▸ Show ${doneTasks.length} completed`;
-      showDone.addEventListener('click',function(){
-        if(this.nextSibling&&this.nextSibling.style.display!=='none'){this.nextSibling.style.display='none';this.textContent=`▸ Show ${doneTasks.length} completed`;return;}
-        if(this.nextSibling){this.nextSibling.style.display='block';this.textContent=`▾ Hide ${doneTasks.length} completed`;return;}
-        const doneDiv=document.createElement('div');
-        doneTasks.forEach(c=>{
-          const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:6px;padding:2px 0;';
-          row.innerHTML=`<input type="checkbox" checked style="cursor:pointer;accent-color:var(--accent);margin-top:2px;" onchange="toggleClItem('${bm.id}','${c.id}',this.checked);renderAO();">
-            <span style="font-size:12px;color:var(--dim);text-decoration:line-through;">${esc(c.text)}</span>`;
-          doneDiv.appendChild(row);
-        });
-        this.after(doneDiv);this.textContent=`▾ Hide ${doneTasks.length} completed`;
-      });
-      clDiv.appendChild(showDone);
-    }
-    el.appendChild(clDiv);
-  }
-  return el;
-}
-function updateActionsBadge(){
-  const badge=document.getElementById('actionsBadge');if(!badge)return;
-  let count=0;
-  D.subjects.forEach(s=>s.subSubjects.forEach(ss=>ss.sections.forEach(sec=>
-    sec.bookmarks.forEach(bm=>{if(bm.status!=='archived'&&bm.priority==='high')count++;})
-  )));
-  if(count){badge.style.display='';badge.textContent=count;}else badge.style.display='none';
-}
 
 // ════════════════════════════════════════════════════════
 // BULK IMPORT
