@@ -1022,12 +1022,14 @@ async function loadData(){
       D={ subjects:[], recent:[] };
     }
     setSyncStatus('ok','Saved');
+    // Expose data for Chrome extension
+    window.loData=D; window.loReady=true;
     showApp();
   }catch(e){
     setSyncStatus('error','Load failed');
     toast('Failed to load data: '+e.message,'error');
-    // Show app anyway with empty data
     D={ subjects:[], recent:[] };
+    window.loData=D; window.loReady=true;
     showApp();
   }
 }
@@ -1050,6 +1052,7 @@ async function saveData(){
       driveFileId=j.id;
     }
     setSyncStatus('ok','Saved');
+    window.loData=D; // keep extension data fresh
   }catch(e){
     setSyncStatus('error','Save failed — retry');
     toast('Save failed: '+e.message,'error');
@@ -1092,6 +1095,8 @@ function migrateData(d){
 }
 function showApp(){
   document.getElementById('mainApp').style.display='flex';
+  // Expose save function for extension
+  window.loSave=saveData;
   render();
   loadPrefs();
   initResizers();
