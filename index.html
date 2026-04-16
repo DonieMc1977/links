@@ -1226,6 +1226,7 @@ function renderSubjects(){
     el.addEventListener('dblclick',e=>{e.stopPropagation();openFM('subject',sub.id);});
     attachFolderDrag(el,'subject',sub.id,sub.title);
     attachFolderDrop(el,'subject',sub.id);
+    attachBmDrop(el,sub.id,null,null);
     list.appendChild(el);
   });
 }
@@ -1250,6 +1251,7 @@ function renderSubSubs(){
     el.addEventListener('dblclick',e=>{e.stopPropagation();openFM('subsub',ss.id);});
     attachFolderDrag(el,'subsub',ss.id,ss.title);
     attachFolderDrop(el,'subsub',ss.id);
+    attachBmDrop(el,selSub,ss.id,null);
     list.appendChild(el);
   });
 }
@@ -1793,6 +1795,17 @@ function reorderBm(fromId, toId){
 }
 function moveBmToSection(bmId, targetSubId, targetSSId, targetSecId){
   const source=findBm(bmId);if(!source)return;
+  // Resolve partial targets: if only subject given, pick first subsub+section
+  const sub=getSub(targetSubId);if(!sub)return;
+  if(!targetSSId){
+    const ss=sub.subSubjects[0];if(!ss)return;
+    targetSSId=ss.id;targetSecId=ss.sections[0]?.id;
+  }
+  if(!targetSecId){
+    const ss=getSS(targetSubId,targetSSId);if(!ss)return;
+    targetSecId=ss.sections[0]?.id;
+  }
+  if(!targetSecId)return;
   const targetSec=getSec(targetSubId,targetSSId,targetSecId);
   if(!targetSec||source.sec===targetSec)return;
   pushHist();
