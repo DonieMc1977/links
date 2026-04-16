@@ -1990,22 +1990,28 @@ function attachFolderDrop(el, type, id){
   });
 }
 function attachBmDrop(el, subId, ssId, secId){
-  // Use capture phase so this fires before attachFolderDrop and can preventDefault
-  el.addEventListener('dragover',e=>{
-    if(!dragItemId)return;
-    e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';
-    el.classList.add('drop-target-bm');
-  },true);
-  el.addEventListener('dragleave',e=>{
-    if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
-  });
-  el.addEventListener('drop',e=>{
-    if(!dragItemId)return;
-    e.preventDefault();e.stopPropagation();el.classList.remove('drop-target-bm');
-    moveBmToSection(dragItemId,subId,ssId,secId);
-    dragItemId=null;
-  },true);
+  el.dataset.bmDrop=[subId||'',ssId||'',secId||''].join(',');
 }
+// Global drag handlers for cross-section bookmark moves
+document.addEventListener('dragover',e=>{
+  if(!dragItemId)return;
+  const pi=e.target.closest('.panel-item[data-bm-drop]');
+  if(pi){e.preventDefault();e.dataTransfer.dropEffect='move';pi.classList.add('drop-target-bm');}
+});
+document.addEventListener('dragleave',e=>{
+  if(!dragItemId)return;
+  const pi=e.target.closest('.panel-item[data-bm-drop]');
+  if(pi&&!pi.contains(e.relatedTarget))pi.classList.remove('drop-target-bm');
+});
+document.addEventListener('drop',e=>{
+  if(!dragItemId)return;
+  const pi=e.target.closest('.panel-item[data-bm-drop]');
+  if(!pi)return;
+  e.preventDefault();pi.classList.remove('drop-target-bm');
+  const[subId,ssId,secId]=pi.dataset.bmDrop.split(',');
+  moveBmToSection(dragItemId,subId||null,ssId||null,secId||null);
+  dragItemId=null;
+});
 function reorderFolder(type, fromId, toId){
   pushHist();
   let arr=null;
