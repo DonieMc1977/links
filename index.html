@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v2.1-dragfix -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -840,6 +841,14 @@ let notesPinned = localStorage.getItem('lo-notes-pinned') === '1';
 let notesTimer = null;
 
 // ════════════════════════════════════════════════════════
+// DRAG DEBUG (Ctrl+Shift+D to toggle)
+// ════════════════════════════════════════════════════════
+let debugOn=false;
+function toggleDebug(){debugOn=!debugOn;document.getElementById('dragDebug').style.display=debugOn?'block':'none';}
+function dlog(msg){if(!debugOn)return;const el=document.getElementById('dragDebugLog');const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString()+' '+msg;el.prepend(d);while(el.children.length>30)el.lastChild.remove();}
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='D')toggleDebug();});
+
+// ════════════════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════════════════
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -1385,12 +1394,12 @@ function buildCard(bm){
   card.draggable=true;
   card.addEventListener('dragstart',e=>{
     if(e.target.closest('button,input,textarea,.cl-tag-wrap')){e.preventDefault();return;}
-    dragItemId=bm.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';
+    dragItemId=bm.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';dlog('DRAGSTART bm='+bm.id);
   });
-  card.addEventListener('dragend',()=>{dragItemId=null;card.classList.remove('dragging');});
+  card.addEventListener('dragend',()=>{dragItemId=null;card.classList.remove('dragging');dlog('DRAGEND');});
   card.addEventListener('dragover',e=>{if(!dragItemId||dragItemId===bm.id)return;e.preventDefault();card.classList.add('drag-over');});
   card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(dragItemId&&dragItemId!==bm.id)reorderBm(dragItemId,bm.id);});
+  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(dragItemId&&dragItemId!==bm.id){dlog('CARD-DROP reorder '+dragItemId+' -> '+bm.id);reorderBm(dragItemId,bm.id);}});
   // Wire inline tag input
   wireInlineTag(card.querySelector('.cl-tag-wrap'), bm.id);
   return card;
@@ -1996,7 +2005,7 @@ function attachBmDrop(el, subId, ssId, secId){
   el.addEventListener('dragover',e=>{
     if(!dragItemId)return;
     e.preventDefault();e.dataTransfer.dropEffect='move';
-    el.classList.add('drop-target-bm');
+    el.classList.add('drop-target-bm');dlog('PANEL-DRAGOVER '+subId+'/'+ssId+'/'+secId);
   });
   el.addEventListener('dragleave',e=>{
     if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
@@ -2004,10 +2013,13 @@ function attachBmDrop(el, subId, ssId, secId){
   el.addEventListener('drop',e=>{
     e.preventDefault();el.classList.remove('drop-target-bm');
     if(!dragItemId)return;
+    dlog('PANEL-DROP '+subId+'/'+ssId+'/'+secId+' bm='+dragItemId);
     moveBmToSection(dragItemId,subId,ssId,secId);
     dragItemId=null;
   });
 }
+document.addEventListener('dragover',e=>{if(dragItemId){e.preventDefault();e.dataTransfer.dropEffect='move';dlog('DOC-DRAGOVER id='+dragItemId);}});
+document.addEventListener('drop',e=>{if(dragItemId){e.preventDefault();dlog('DOC-DROP (no target) id='+dragItemId);dragItemId=null;}});
 function reorderFolder(type, fromId, toId){
   pushHist();
   let arr=null;
@@ -2991,5 +3003,6 @@ window.addEventListener('load',()=>{
   setTimeout(()=>clearInterval(checkGIS),10000);
 });
 </script>
+<div id="dragDebug" style="display:none;position:fixed;bottom:0;right:0;width:340px;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);color:#0f0;font:11px monospace;padding:8px;z-index:99999;border-top-left-radius:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Drag Debug (Ctrl+Shift+D)</b><span style="cursor:pointer;" onclick="toggleDebug()">✕</span></div><div id="dragDebugLog"></div></div>
 </body>
 </html>
