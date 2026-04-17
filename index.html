@@ -1992,10 +1992,10 @@ function attachFolderDrag(el, type, id, title){
   el.addEventListener('dragend',()=>{ el.classList.remove('dragging'); dragFolderInfo=null; });
 }
 function attachFolderDrop(el, type, id){
-  el.addEventListener('dragover',e=>{ if(!dragFolderInfo||dragFolderInfo.type!==type||dragFolderInfo.id===id)return; e.preventDefault(); el.classList.add('panel-item drop-target-active'); });
-  el.addEventListener('dragleave',()=>el.classList.remove('panel-item drop-target-active'));
+  el.addEventListener('dragover',e=>{ if(!dragFolderInfo||dragFolderInfo.type!==type||dragFolderInfo.id===id)return; e.preventDefault(); el.classList.add('drop-target-active'); });
+  el.addEventListener('dragleave',()=>el.classList.remove('drop-target-active'));
   el.addEventListener('drop',e=>{
-    e.preventDefault();el.classList.remove('panel-item drop-target-active');
+    e.preventDefault();el.classList.remove('drop-target-active');
     if(!dragFolderInfo||dragFolderInfo.type!==type||dragFolderInfo.id===id)return;
     reorderFolder(type, dragFolderInfo.id, id);
     dragFolderInfo=null;
