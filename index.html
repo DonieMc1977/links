@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.2-dragfix -->
+<!-- v2.3-dragfix -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -846,7 +846,7 @@ let notesTimer = null;
 let debugOn=false;
 function toggleDebug(){debugOn=!debugOn;document.getElementById('dragDebug').style.display=debugOn?'block':'none';}
 function dlog(msg){if(!debugOn)return;const el=document.getElementById('dragDebugLog');const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString()+' '+msg;el.prepend(d);while(el.children.length>30)el.lastChild.remove();}
-document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='D')toggleDebug();});
+document.addEventListener('keydown',e=>{if(e.altKey&&e.key==='d')toggleDebug();});
 
 // ════════════════════════════════════════════════════════
 // UTILS
