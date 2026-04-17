@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v3.1-flatten -->
+<!-- v3.2-restructure -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2053,15 +2053,17 @@ function moveSubjectIntoSubject(fromSubId,targetSubId){
   const srcSub=getSub(fromSubId);if(!srcSub)return;
   const tSub=getSub(targetSubId);if(!tSub)return;
   pushHist();
-  const allSections=srcSub.subSubjects.reduce((a,ss)=>a.concat(ss.sections),[]);
-  allSections.forEach((s,i)=>s.order=i);
-  const newSS={id:srcSub.id,title:srcSub.title,order:tSub.subSubjects.length,sections:allSections};
+  const newSections=srcSub.subSubjects.map((ss,i)=>{
+    const allBm=ss.sections.reduce((a,sec)=>a.concat(sec.bookmarks),[]);
+    allBm.forEach((b,j)=>b.order=j);
+    return{id:ss.id,title:ss.title,order:i,bookmarks:allBm,notes:''};
+  });
+  const newSS={id:srcSub.id,title:srcSub.title,order:tSub.subSubjects.length,sections:newSections};
   tSub.subSubjects.push(newSS);
   D.subjects=D.subjects.filter(s=>s.id!==fromSubId);
   D.subjects.forEach((s,i)=>s.order=i);
   selSub=targetSubId;selSS=newSS.id;selSec=null;
   save();render();
-  dlog('FLATTEN subject='+fromSubId+' -> subject='+targetSubId);
   toast('Moved into '+tSub.title);
 }
 function moveSubSubToSubject(ssId,targetSubId){
