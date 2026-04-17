@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- v3.2-restructure -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -843,14 +842,6 @@ let notesPinned = localStorage.getItem('lo-notes-pinned') === '1';
 let notesTimer = null;
 
 // ════════════════════════════════════════════════════════
-// DRAG DEBUG (Ctrl+Shift+D to toggle)
-// ════════════════════════════════════════════════════════
-let debugOn=true;
-function toggleDebug(){debugOn=!debugOn;document.getElementById('dragDebug').style.display=debugOn?'block':'none';}
-function dlog(msg){if(!debugOn)return;const el=document.getElementById('dragDebugLog');const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString()+' '+msg;el.prepend(d);while(el.children.length>30)el.lastChild.remove();}
-document.addEventListener('keydown',e=>{if(e.altKey&&e.key==='d')toggleDebug();});
-
-// ════════════════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════════════════
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -1398,12 +1389,11 @@ function buildCard(bm){
   card.draggable=true;
   card.addEventListener('dragstart',e=>{
     if(e.target.closest('button,input,textarea,.cl-tag-wrap')){e.preventDefault();return;}
-    dragItemId=bm.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';dlog('DRAGSTART bm='+bm.id);
-  });
-  card.addEventListener('dragend',()=>{dragItemId=null;card.classList.remove('dragging');dlog('DRAGEND');});
+    dragItemId=bm.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';  });
+  card.addEventListener('dragend',()=>{dragItemId=null;card.classList.remove('dragging');});
   card.addEventListener('dragover',e=>{if(!dragItemId||dragItemId===bm.id)return;e.preventDefault();card.classList.add('drag-over');});
   card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(dragItemId&&dragItemId!==bm.id){dlog('CARD-DROP reorder '+dragItemId+' -> '+bm.id);reorderBm(dragItemId,bm.id);}});
+  card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(dragItemId&&dragItemId!==bm.id){reorderBm(dragItemId,bm.id);}});
   // Wire inline tag input
   wireInlineTag(card.querySelector('.cl-tag-wrap'), bm.id);
   return card;
@@ -2021,15 +2011,14 @@ function attachBmDrop(el, subId, ssId, secId){
   el.addEventListener('dragover',e=>{
     if(!dragItemId)return;
     e.preventDefault();e.dataTransfer.dropEffect='move';
-    el.classList.add('drop-target-bm');dlog('PANEL-DRAGOVER '+subId+'/'+ssId+'/'+secId);
-  });
+    el.classList.add('drop-target-bm');  });
   el.addEventListener('dragleave',e=>{
     if(!el.contains(e.relatedTarget))el.classList.remove('drop-target-bm');
   });
   el.addEventListener('drop',e=>{
     e.preventDefault();el.classList.remove('drop-target-bm');
     if(!dragItemId)return;
-    dlog('PANEL-DROP '+subId+'/'+ssId+'/'+secId+' bm='+dragItemId);
+
     moveBmToSection(dragItemId,subId,ssId,secId);
     dragItemId=null;
   });
@@ -2077,7 +2066,7 @@ function moveSubSubToSubject(ssId,targetSubId){
   tSub.subSubjects.push(f.ss);
   selSub=targetSubId;selSS=ssId;selSec=null;
   save();render();
-  dlog('MOVE subsub='+ssId+' -> subject='+targetSubId);
+
   toast('Moved to '+tSub.title);
 }
 function moveSectionToSubSub(secId,targetSSId){
@@ -2091,7 +2080,7 @@ function moveSectionToSubSub(secId,targetSSId){
   tInfo.ss.sections.push(f.sec);
   selSub=tInfo.subject.id;selSS=targetSSId;selSec=secId;
   save();render();
-  dlog('MOVE section='+secId+' -> subsub='+targetSSId);
+
   toast('Moved to '+tInfo.ss.title);
 }
 
@@ -3065,6 +3054,5 @@ window.addEventListener('load',()=>{
   setTimeout(()=>clearInterval(checkGIS),10000);
 });
 </script>
-<div id="dragDebug" style="display:block;position:fixed;bottom:0;right:0;width:340px;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);color:#0f0;font:11px monospace;padding:8px;z-index:99999;border-top-left-radius:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Drag Debug (Ctrl+Shift+D)</b><span style="cursor:pointer;" onclick="toggleDebug()">✕</span></div><div id="dragDebugLog"></div></div>
 </body>
 </html>
