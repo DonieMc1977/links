@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v3.0-crossmove -->
+<!-- v3.1-flatten -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2000,17 +2000,18 @@ function attachFolderDrop(el, type, id){
     if(!dragFolderInfo||dragFolderInfo.id===id)return;
     const ft=dragFolderInfo.type;
     const same=ft===type;
-    const cross=(ft==='subsub'&&type==='subject')||(ft==='section'&&type==='subsub');
+    const cross=(ft==='subsub'&&type==='subject')||(ft==='section'&&type==='subsub')||(ft==='subject'&&type==='subject');
     if(!same&&!cross)return;
     e.preventDefault();
-    el.classList.add(same?'drop-target-active':'drop-target-move');
+    el.classList.add(cross?'drop-target-move':'drop-target-active');
   });
   el.addEventListener('dragleave',()=>el.classList.remove('drop-target-active','drop-target-move'));
   el.addEventListener('drop',e=>{
     e.preventDefault();el.classList.remove('drop-target-active','drop-target-move');
     if(!dragFolderInfo||dragFolderInfo.id===id)return;
     const ft=dragFolderInfo.type;
-    if(ft===type)reorderFolder(type,dragFolderInfo.id,id);
+    if(ft==='subject'&&type==='subject')moveSubjectIntoSubject(dragFolderInfo.id,id);
+    else if(ft===type)reorderFolder(type,dragFolderInfo.id,id);
     else if(ft==='subsub'&&type==='subject')moveSubSubToSubject(dragFolderInfo.id,id);
     else if(ft==='section'&&type==='subsub')moveSectionToSubSub(dragFolderInfo.id,id);
     dragFolderInfo=null;
@@ -2046,6 +2047,22 @@ function reorderFolder(type, fromId, toId){
   if(fi<0||ti<0)return;
   const[item]=arr.splice(fi,1);arr.splice(ti,0,item);arr.forEach((x,i)=>x.order=i);
   save();render();
+}
+function moveSubjectIntoSubject(fromSubId,targetSubId){
+  if(fromSubId===targetSubId)return;
+  const srcSub=getSub(fromSubId);if(!srcSub)return;
+  const tSub=getSub(targetSubId);if(!tSub)return;
+  pushHist();
+  const allSections=srcSub.subSubjects.reduce((a,ss)=>a.concat(ss.sections),[]);
+  allSections.forEach((s,i)=>s.order=i);
+  const newSS={id:srcSub.id,title:srcSub.title,order:tSub.subSubjects.length,sections:allSections};
+  tSub.subSubjects.push(newSS);
+  D.subjects=D.subjects.filter(s=>s.id!==fromSubId);
+  D.subjects.forEach((s,i)=>s.order=i);
+  selSub=targetSubId;selSS=newSS.id;selSec=null;
+  save();render();
+  dlog('FLATTEN subject='+fromSubId+' -> subject='+targetSubId);
+  toast('Moved into '+tSub.title);
 }
 function moveSubSubToSubject(ssId,targetSubId){
   const f=findSS(ssId);if(!f)return;
