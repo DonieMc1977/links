@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.3-dragfix -->
+<!-- v3.0-crossmove -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -143,6 +143,8 @@ header{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;backg
 .bm-card.flash{animation:flashCard 1.2s ease-out;}
 @keyframes flashCard{0%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:none;}}
 .panel-item.drop-target-bm{background:var(--aglow);outline:2px solid var(--accent);outline-offset:-2px;}
+.panel-item.drop-target-active{background:var(--aglow);outline:2px solid var(--accent);outline-offset:-2px;}
+.panel-item.drop-target-move{background:var(--aglow);outline:2px dashed var(--accent);outline-offset:-2px;}
 .notes-fmt-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;font-family:var(--font);min-width:24px;transition:all .1s;line-height:1.4;}
 .notes-fmt-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--bright);}
 .bm-main{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;}
@@ -843,7 +845,7 @@ let notesTimer = null;
 // ════════════════════════════════════════════════════════
 // DRAG DEBUG (Ctrl+Shift+D to toggle)
 // ════════════════════════════════════════════════════════
-let debugOn=false;
+let debugOn=true;
 function toggleDebug(){debugOn=!debugOn;document.getElementById('dragDebug').style.display=debugOn?'block':'none';}
 function dlog(msg){if(!debugOn)return;const el=document.getElementById('dragDebugLog');const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString()+' '+msg;el.prepend(d);while(el.children.length>30)el.lastChild.remove();}
 document.addEventListener('keydown',e=>{if(e.altKey&&e.key==='d')toggleDebug();});
@@ -874,6 +876,8 @@ function findBm(id){
     if(bm) return{bm,sec,ss,sub:s};
   } return null;
 }
+function findSS(id){for(const s of D.subjects){const ss=s.subSubjects.find(x=>x.id===id);if(ss)return{ss,subject:s};}return null;}
+function findSecAnywhere(id){for(const s of D.subjects)for(const ss of s.subSubjects){const sec=ss.sections.find(x=>x.id===id);if(sec)return{sec,subSub:ss,subject:s};}return null;}
 function getAllTags(){
   const t=new Set();
   D.subjects.forEach(s=>s.subSubjects.forEach(ss=>ss.sections.forEach(sec=>
@@ -1992,12 +1996,23 @@ function attachFolderDrag(el, type, id, title){
   el.addEventListener('dragend',()=>{ el.classList.remove('dragging'); dragFolderInfo=null; });
 }
 function attachFolderDrop(el, type, id){
-  el.addEventListener('dragover',e=>{ if(!dragFolderInfo||dragFolderInfo.type!==type||dragFolderInfo.id===id)return; e.preventDefault(); el.classList.add('drop-target-active'); });
-  el.addEventListener('dragleave',()=>el.classList.remove('drop-target-active'));
+  el.addEventListener('dragover',e=>{
+    if(!dragFolderInfo||dragFolderInfo.id===id)return;
+    const ft=dragFolderInfo.type;
+    const same=ft===type;
+    const cross=(ft==='subsub'&&type==='subject')||(ft==='section'&&type==='subsub');
+    if(!same&&!cross)return;
+    e.preventDefault();
+    el.classList.add(same?'drop-target-active':'drop-target-move');
+  });
+  el.addEventListener('dragleave',()=>el.classList.remove('drop-target-active','drop-target-move'));
   el.addEventListener('drop',e=>{
-    e.preventDefault();el.classList.remove('drop-target-active');
-    if(!dragFolderInfo||dragFolderInfo.type!==type||dragFolderInfo.id===id)return;
-    reorderFolder(type, dragFolderInfo.id, id);
+    e.preventDefault();el.classList.remove('drop-target-active','drop-target-move');
+    if(!dragFolderInfo||dragFolderInfo.id===id)return;
+    const ft=dragFolderInfo.type;
+    if(ft===type)reorderFolder(type,dragFolderInfo.id,id);
+    else if(ft==='subsub'&&type==='subject')moveSubSubToSubject(dragFolderInfo.id,id);
+    else if(ft==='section'&&type==='subsub')moveSectionToSubSub(dragFolderInfo.id,id);
     dragFolderInfo=null;
   });
 }
@@ -2018,8 +2033,8 @@ function attachBmDrop(el, subId, ssId, secId){
     dragItemId=null;
   });
 }
-document.addEventListener('dragover',e=>{if(dragItemId){e.preventDefault();e.dataTransfer.dropEffect='move';dlog('DOC-DRAGOVER id='+dragItemId);}});
-document.addEventListener('drop',e=>{if(dragItemId){e.preventDefault();dlog('DOC-DROP (no target) id='+dragItemId);dragItemId=null;}});
+document.addEventListener('dragover',e=>{if(dragItemId||dragFolderInfo){e.preventDefault();e.dataTransfer.dropEffect='move';}});
+document.addEventListener('drop',e=>{if(dragItemId){e.preventDefault();dragItemId=null;}if(dragFolderInfo){e.preventDefault();dragFolderInfo=null;}});
 function reorderFolder(type, fromId, toId){
   pushHist();
   let arr=null;
@@ -2031,6 +2046,34 @@ function reorderFolder(type, fromId, toId){
   if(fi<0||ti<0)return;
   const[item]=arr.splice(fi,1);arr.splice(ti,0,item);arr.forEach((x,i)=>x.order=i);
   save();render();
+}
+function moveSubSubToSubject(ssId,targetSubId){
+  const f=findSS(ssId);if(!f)return;
+  if(f.subject.id===targetSubId)return;
+  pushHist();
+  f.subject.subSubjects=f.subject.subSubjects.filter(s=>s.id!==ssId);
+  f.subject.subSubjects.forEach((s,i)=>s.order=i);
+  const tSub=getSub(targetSubId);if(!tSub)return;
+  f.ss.order=tSub.subSubjects.length;
+  tSub.subSubjects.push(f.ss);
+  selSub=targetSubId;selSS=ssId;selSec=null;
+  save();render();
+  dlog('MOVE subsub='+ssId+' -> subject='+targetSubId);
+  toast('Moved to '+tSub.title);
+}
+function moveSectionToSubSub(secId,targetSSId){
+  const f=findSecAnywhere(secId);if(!f)return;
+  if(f.subSub.id===targetSSId)return;
+  pushHist();
+  f.subSub.sections=f.subSub.sections.filter(s=>s.id!==secId);
+  f.subSub.sections.forEach((s,i)=>s.order=i);
+  const tInfo=findSS(targetSSId);if(!tInfo)return;
+  f.sec.order=tInfo.ss.sections.length;
+  tInfo.ss.sections.push(f.sec);
+  selSub=tInfo.subject.id;selSS=targetSSId;selSec=secId;
+  save();render();
+  dlog('MOVE section='+secId+' -> subsub='+targetSSId);
+  toast('Moved to '+tInfo.ss.title);
 }
 
 // ════════════════════════════════════════════════════════
@@ -3003,6 +3046,6 @@ window.addEventListener('load',()=>{
   setTimeout(()=>clearInterval(checkGIS),10000);
 });
 </script>
-<div id="dragDebug" style="display:none;position:fixed;bottom:0;right:0;width:340px;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);color:#0f0;font:11px monospace;padding:8px;z-index:99999;border-top-left-radius:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Drag Debug (Ctrl+Shift+D)</b><span style="cursor:pointer;" onclick="toggleDebug()">✕</span></div><div id="dragDebugLog"></div></div>
+<div id="dragDebug" style="display:block;position:fixed;bottom:0;right:0;width:340px;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);color:#0f0;font:11px monospace;padding:8px;z-index:99999;border-top-left-radius:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Drag Debug (Ctrl+Shift+D)</b><span style="cursor:pointer;" onclick="toggleDebug()">✕</span></div><div id="dragDebugLog"></div></div>
 </body>
 </html>
