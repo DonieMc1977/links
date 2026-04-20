@@ -1083,6 +1083,7 @@ async function loadData(){
       if(text&&text.trim().startsWith('{')){
         const parsed=JSON.parse(text);
         D=migrateData(parsed);
+        save();
       }
     } else {
       D={ subjects:[], recent:[] };
@@ -1169,10 +1170,7 @@ function migrateData(d){
     if(!s.subSubjects) s.subSubjects=[];
     s.subSubjects.forEach(ss=>{
       if(!ss.sections) ss.sections=[];
-      // Ensure "1. Documents" section exists
-      if(!ss.sections.find(sec=>sec.title==='1. Documents')){
-        ss.sections.unshift({id:uid(),title:'1. Documents',order:0,bookmarks:[]});
-      }
+      ss.sections=ss.sections.filter(sec=>sec.title!=='1. Documents'||(sec.bookmarks&&sec.bookmarks.length>0));
       ss.sections.forEach(sec=>{
         if(!sec.bookmarks) sec.bookmarks=[];
         if(sec.notes===undefined) sec.notes='';
@@ -1947,7 +1945,6 @@ function saveFM(){
     } else if(fmMode==='subsub'&&selSub){
       const s=getSub(selSub);if(!s)return;
       const newSS={id:uid(),title:name,order:s.subSubjects.length,sections:[]};
-      ensureDocSection(newSS);
       s.subSubjects.push(newSS);
     } else if(fmMode==='section'&&selSS){
       const ss=getSS(selSub,selSS);if(!ss)return;
@@ -1955,11 +1952,6 @@ function saveFM(){
     }
   }
   save();render();closeModal('folderModal');
-}
-function ensureDocSection(ss){
-  if(!ss.sections.find(s=>s.title==='1. Documents')){
-    ss.sections.unshift({id:uid(),title:'1. Documents',order:0,bookmarks:[]});
-  }
 }
 function deleteFolder(type, id){
   let name='',hasChildren=false;
